@@ -79,6 +79,69 @@ function mdsm_get_seo_files() {
 }
 
 /**
+ * Get custom markdown files created by users
+ */
+function mdsm_get_custom_markdown_files() {
+    $custom_files = get_option('mdsm_custom_markdown_files', array());
+    
+    if (!is_array($custom_files)) {
+        return array();
+    }
+    
+    return $custom_files;
+}
+
+/**
+ * Add a custom markdown file
+ */
+function mdsm_add_custom_markdown_file($filename, $description = '') {
+    error_log('MDSM ADD FILE: Starting with filename=' . $filename . ', description=' . $description);
+    
+    // Validate filename
+    $filename = sanitize_file_name($filename);
+    error_log('MDSM ADD FILE: After sanitize=' . $filename);
+    
+    // Ensure .md extension
+    if (!preg_match('/\.md$/', $filename)) {
+        $filename .= '.md';
+        error_log('MDSM ADD FILE: Added extension=' . $filename);
+    }
+    
+    // Get existing files
+    $custom_files = mdsm_get_custom_markdown_files();
+    error_log('MDSM ADD FILE: Existing files count=' . count($custom_files));
+    error_log('MDSM ADD FILE: Existing files=' . print_r($custom_files, true));
+    
+    // Add new file if it doesn't exist
+    if (!isset($custom_files[$filename])) {
+        error_log('MDSM ADD FILE: File does not exist, adding...');
+        $custom_files[$filename] = sanitize_text_field($description);
+        $result = update_option('mdsm_custom_markdown_files', $custom_files);
+        error_log('MDSM ADD FILE: update_option result=' . ($result ? 'true' : 'false'));
+        error_log('MDSM ADD FILE: New files=' . print_r($custom_files, true));
+        return true;
+    }
+    
+    error_log('MDSM ADD FILE: File already exists, returning false');
+    return false;
+}
+
+/**
+ * Delete a custom markdown file entry
+ */
+function mdsm_delete_custom_markdown_file($filename) {
+    $custom_files = mdsm_get_custom_markdown_files();
+    
+    if (isset($custom_files[$filename])) {
+        unset($custom_files[$filename]);
+        update_option('mdsm_custom_markdown_files', $custom_files);
+        return true;
+    }
+    
+    return false;
+}
+
+/**
  * Get all file types
  */
 function mdsm_get_file_types() {

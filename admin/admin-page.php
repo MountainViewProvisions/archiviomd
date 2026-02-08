@@ -23,6 +23,9 @@ $meta_total = 0;
 foreach ($meta_files as $category => $files) {
     $meta_total += count($files);
 }
+// Add custom markdown files to total
+$custom_markdown_files = mdsm_get_custom_markdown_files();
+$meta_total += count($custom_markdown_files);
 
 $seo_exists = $file_manager->get_existing_files_count('seo');
 $seo_total = count($seo_files);
@@ -62,6 +65,10 @@ $seo_total = count($seo_files);
             <span class="dashicons dashicons-networking"></span>
             <?php _e('Sitemaps', 'meta-doc-seo'); ?>
         </button>
+        <button class="mdsm-tab-button" data-tab="public-index">
+            <span class="dashicons dashicons-admin-page"></span>
+            <?php _e('Public Index', 'meta-doc-seo'); ?>
+        </button>
     </div>
 
     <!-- Tab Content: Meta Documentation -->
@@ -72,13 +79,13 @@ $seo_total = count($seo_files);
         </div>
 
         <?php foreach ($meta_files as $category => $files) : ?>
-            <div class="mdsm-category">
+            <div class="mdsm-category collapsed">
                 <div class="mdsm-category-header">
                     <h3>
                         <span class="dashicons dashicons-category"></span>
                         <?php echo esc_html($category); ?>
                     </h3>
-                    <button class="mdsm-collapse-toggle" aria-expanded="true">
+                    <button class="mdsm-collapse-toggle" aria-expanded="false">
                         <span class="dashicons dashicons-arrow-down-alt2"></span>
                     </button>
                 </div>
@@ -114,16 +121,35 @@ $seo_total = count($seo_files);
                                         <span class="dashicons dashicons-location"></span>
                                         <span><?php echo esc_html($file_info['location']); ?></span>
                                     </div>
-                                    <?php if ($file_info['exists'] && $file_info['url']) : ?>
+                                    <?php if ($file_info['exists'] && $file_info['url']) : 
+                                        $html_renderer = new MDSM_HTML_Renderer();
+                                        $html_exists = $html_renderer->html_file_exists('meta', $file_name);
+                                        $html_url = $html_exists ? $html_renderer->get_html_file_url($html_renderer->get_html_filename($file_name)) : '';
+                                    ?>
                                         <div class="mdsm-file-actions">
                                             <a href="<?php echo esc_url($file_info['url']); ?>" target="_blank" class="mdsm-view-link">
                                                 <span class="dashicons dashicons-external"></span>
-                                                <?php _e('View', 'meta-doc-seo'); ?>
+                                                <?php _e('View MD', 'meta-doc-seo'); ?>
                                             </a>
-                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>">
+                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'meta-doc-seo'); ?>">
                                                 <span class="dashicons dashicons-admin-links"></span>
-                                                <?php _e('Copy Link', 'meta-doc-seo'); ?>
+                                                <?php _e('Copy MD Link', 'meta-doc-seo'); ?>
                                             </button>
+                                            <?php if ($html_exists) : ?>
+                                                <a href="<?php echo esc_url($html_url); ?>" target="_blank" class="mdsm-view-link mdsm-html-link">
+                                                    <span class="dashicons dashicons-media-document"></span>
+                                                    <?php _e('View HTML', 'meta-doc-seo'); ?>
+                                                </a>
+                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'meta-doc-seo'); ?>">
+                                                    <span class="dashicons dashicons-admin-links"></span>
+                                                    <?php _e('Copy HTML', 'meta-doc-seo'); ?>
+                                                </button>
+                                            <?php else : ?>
+                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'meta-doc-seo'); ?>">
+                                                    <span class="dashicons dashicons-media-code"></span>
+                                                    <?php _e('Generate HTML', 'meta-doc-seo'); ?>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -133,6 +159,105 @@ $seo_total = count($seo_files);
                 </div>
             </div>
         <?php endforeach; ?>
+
+        <!-- Custom Markdown Category -->
+        <?php 
+        $custom_files = mdsm_get_custom_markdown_files();
+        ?>
+        <div class="mdsm-category collapsed">
+            <div class="mdsm-category-header">
+                <h3>
+                    <span class="dashicons dashicons-edit"></span>
+                    <?php _e('Custom Markdown', 'meta-doc-seo'); ?>
+                </h3>
+                <button class="mdsm-collapse-toggle" aria-expanded="false">
+                    <span class="dashicons dashicons-arrow-down-alt2"></span>
+                </button>
+            </div>
+            
+            <div class="mdsm-category-content">
+                <div class="mdsm-custom-markdown-controls">
+                    <button type="button" id="add-custom-markdown">
+                        <?php _e('Custom Markdown', 'meta-doc-seo'); ?>
+                    </button>
+                </div>
+                
+                <div class="mdsm-file-grid">
+                    <?php if (empty($custom_files)) : ?>
+                        <p class="mdsm-empty-message"><?php _e('No custom markdown files yet. Click "Custom Markdown" to create one.', 'meta-doc-seo'); ?></p>
+                    <?php else : ?>
+                        <?php foreach ($custom_files as $file_name => $description) : 
+                            $file_info = $file_manager->get_file_info('meta', $file_name);
+                        ?>
+                            <div class="mdsm-file-card mdsm-custom-file-card" data-filename="<?php echo esc_attr($file_name); ?>" data-description="<?php echo esc_attr($description); ?>">
+                                <div class="mdsm-file-header">
+                                    <div class="mdsm-file-title">
+                                        <span class="mdsm-file-icon dashicons dashicons-media-text"></span>
+                                        <span class="mdsm-file-name"><?php echo esc_html($file_name); ?></span>
+                                        <?php if ($file_info['exists']) : ?>
+                                            <span class="mdsm-status-badge mdsm-status-exists"><?php _e('Active', 'meta-doc-seo'); ?></span>
+                                        <?php else : ?>
+                                            <span class="mdsm-status-badge mdsm-status-empty"><?php _e('Empty', 'meta-doc-seo'); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="mdsm-custom-file-actions">
+                                        <button class="mdsm-edit-button" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>">
+                                            <span class="dashicons dashicons-edit"></span>
+                                            <?php _e('Edit', 'meta-doc-seo'); ?>
+                                        </button>
+                                        <button class="mdsm-delete-custom-file" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Delete custom file entry', 'meta-doc-seo'); ?>">
+                                            <span class="dashicons dashicons-trash"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mdsm-file-description">
+                                    <?php echo esc_html($description ? $description : 'Custom markdown file'); ?>
+                                </div>
+                                
+                                <div class="mdsm-file-meta">
+                                    <div class="mdsm-file-location">
+                                        <span class="dashicons dashicons-location"></span>
+                                        <span><?php echo esc_html($file_info['location']); ?></span>
+                                    </div>
+                                    <?php if ($file_info['exists'] && $file_info['url']) : 
+                                        $html_renderer = new MDSM_HTML_Renderer();
+                                        $html_exists = $html_renderer->html_file_exists('meta', $file_name);
+                                        $html_url = $html_exists ? $html_renderer->get_html_file_url($html_renderer->get_html_filename($file_name)) : '';
+                                    ?>
+                                        <div class="mdsm-file-actions">
+                                            <a href="<?php echo esc_url($file_info['url']); ?>" target="_blank" class="mdsm-view-link">
+                                                <span class="dashicons dashicons-external"></span>
+                                                <?php _e('View MD', 'meta-doc-seo'); ?>
+                                            </a>
+                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'meta-doc-seo'); ?>">
+                                                <span class="dashicons dashicons-admin-links"></span>
+                                                <?php _e('Copy MD Link', 'meta-doc-seo'); ?>
+                                            </button>
+                                            <?php if ($html_exists) : ?>
+                                                <a href="<?php echo esc_url($html_url); ?>" target="_blank" class="mdsm-view-link mdsm-html-link">
+                                                    <span class="dashicons dashicons-media-document"></span>
+                                                    <?php _e('View HTML', 'meta-doc-seo'); ?>
+                                                </a>
+                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'meta-doc-seo'); ?>">
+                                                    <span class="dashicons dashicons-admin-links"></span>
+                                                    <?php _e('Copy HTML', 'meta-doc-seo'); ?>
+                                                </button>
+                                            <?php else : ?>
+                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'meta-doc-seo'); ?>">
+                                                    <span class="dashicons dashicons-media-document"></span>
+                                                    <?php _e('Generate HTML', 'meta-doc-seo'); ?>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Tab Content: SEO Files -->
@@ -288,6 +413,11 @@ $seo_total = count($seo_files);
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Tab Content: Public Index -->
+    <div class="mdsm-tab-content" id="tab-public-index">
+        <?php require_once MDSM_PLUGIN_DIR . 'admin/public-index-page.php'; ?>
     </div>
 </div>
 
