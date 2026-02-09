@@ -121,6 +121,55 @@ $seo_total = count($seo_files);
                                         <span class="dashicons dashicons-location"></span>
                                         <span><?php echo esc_html($file_info['location']); ?></span>
                                     </div>
+                                    
+                                    <?php 
+                                    // Display metadata if exists
+                                    if ($file_info['exists'] && isset($file_info['metadata']) && !empty($file_info['metadata']['uuid'])) : 
+                                        $metadata = $file_info['metadata'];
+                                    ?>
+                                        <div class="mdsm-file-metadata">
+                                            <div class="mdsm-metadata-row">
+                                                <span class="mdsm-metadata-label">
+                                                    <span class="dashicons dashicons-tag"></span>
+                                                    Document ID:
+                                                </span>
+                                                <code class="mdsm-metadata-value mdsm-uuid" title="<?php echo esc_attr($metadata['uuid']); ?>">
+                                                    <?php echo esc_html($metadata['uuid']); ?>
+                                                </code>
+                                            </div>
+                                            <?php if (!empty($metadata['modified_at'])) : 
+                                                $formatted_time = gmdate('Y-m-d H:i:s \U\T\C', strtotime($metadata['modified_at']));
+                                            ?>
+                                                <div class="mdsm-metadata-row">
+                                                    <span class="mdsm-metadata-label">
+                                                        <span class="dashicons dashicons-clock"></span>
+                                                        Last Modified:
+                                                    </span>
+                                                    <code class="mdsm-metadata-value">
+                                                        <?php echo esc_html($formatted_time); ?>
+                                                    </code>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($metadata['checksum'])) : ?>
+                                                <div class="mdsm-metadata-row">
+                                                    <span class="mdsm-metadata-label">
+                                                        <span class="dashicons dashicons-shield"></span>
+                                                        SHA-256:
+                                                    </span>
+                                                    <code class="mdsm-metadata-value mdsm-checksum" title="<?php echo esc_attr($metadata['checksum']); ?>">
+                                                        <?php echo esc_html(substr($metadata['checksum'], 0, 16) . '...'); ?>
+                                                    </code>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($metadata['changelog'])) : ?>
+                                                <button class="mdsm-view-changelog" data-file-name="<?php echo esc_attr($file_name); ?>">
+                                                    <span class="dashicons dashicons-list-view"></span>
+                                                    View Change Log (<?php echo count($metadata['changelog']); ?> entries)
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    
                                     <?php if ($file_info['exists'] && $file_info['url']) : 
                                         $html_renderer = new MDSM_HTML_Renderer();
                                         $html_exists = $html_renderer->html_file_exists('meta', $file_name);
@@ -452,6 +501,32 @@ $seo_total = count($seo_files);
                 <span class="dashicons dashicons-saved"></span>
                 <?php _e('Save File', 'meta-doc-seo'); ?>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Changelog Modal -->
+<div id="mdsm-changelog-modal" class="mdsm-modal">
+    <div class="mdsm-modal-content">
+        <div class="mdsm-modal-header">
+            <h2><?php _e('Document Change Log', 'meta-doc-seo'); ?></h2>
+            <button class="mdsm-modal-close">
+                <span class="dashicons dashicons-no"></span>
+            </button>
+        </div>
+        
+        <div class="mdsm-modal-body">
+            <div class="mdsm-changelog-info">
+                <p id="mdsm-changelog-filename"></p>
+            </div>
+            
+            <div id="mdsm-changelog-content" class="mdsm-changelog-content">
+                <!-- Changelog entries will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="mdsm-modal-footer">
+            <button type="button" class="button mdsm-modal-close"><?php _e('Close', 'meta-doc-seo'); ?></button>
         </div>
     </div>
 </div>

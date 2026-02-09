@@ -23,9 +23,6 @@
         bindEvents: function() {
             var self = this;
             
-            console.log('MDSM: bindEvents() called');
-            console.log('MDSM: Binding custom markdown button handler');
-            
             // Tab switching
             $('.mdsm-tab-button').on('click', function() {
                 var tab = $(this).data('tab');
@@ -104,18 +101,32 @@
             $(document).on('click', '#add-custom-markdown', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Custom Markdown button clicked');
                 self.showCustomMarkdownPrompt();
                 return false;
             });
-            console.log('MDSM: Custom markdown button handler BOUND');
-            console.log('MDSM: Checking if #add-custom-markdown exists:', $('#add-custom-markdown').length);
-            console.log('MDSM: Button element:', $('#add-custom-markdown')[0]);
             
             // Delete custom file button
             $(document).on('click', '.mdsm-delete-custom-file', function() {
                 var fileName = $(this).data('file-name');
                 self.deleteCustomMarkdownFile(fileName, $(this));
+            });
+            
+            // View changelog button
+            $(document).on('click', '.mdsm-view-changelog', function() {
+                var fileName = $(this).data('file-name');
+                self.viewChangelog(fileName);
+            });
+            
+            // Close changelog modal
+            $('#mdsm-changelog-modal .mdsm-modal-close').on('click', function() {
+                $('#mdsm-changelog-modal').removeClass('active');
+            });
+            
+            // Close changelog modal on outside click
+            $('#mdsm-changelog-modal').on('click', function(e) {
+                if (e.target.id === 'mdsm-changelog-modal') {
+                    $(this).removeClass('active');
+                }
             });
         },
         
@@ -476,34 +487,23 @@
         showCustomMarkdownPrompt: function() {
             var self = this;
             
-            console.log('Custom Markdown: mdsmData =', mdsmData);
-            console.log('Custom Markdown: ajaxUrl =', mdsmData.ajaxUrl);
-            console.log('Custom Markdown: nonce =', mdsmData.nonce);
-            
             // Prevent multiple simultaneous requests
             if (self.creatingCustomFile) {
-                console.log('Custom Markdown: Already creating a file, ignoring duplicate request');
                 return;
             }
-            
-            console.log('Custom Markdown: Prompt opened');
             
             var filename = prompt('Enter the filename for your custom markdown file:\n\n(It will automatically get a .md extension if not provided)');
             
             if (!filename) {
-                console.log('Custom Markdown: User cancelled or entered empty filename');
                 return; // User cancelled
             }
             
             filename = filename.trim();
             
             if (!filename) {
-                console.log('Custom Markdown: Filename was empty after trim');
                 self.showToast('Filename cannot be empty', 'error');
                 return;
             }
-            
-            console.log('Custom Markdown: Filename entered:', filename);
             
             // Ask for optional description
             var description = prompt('Enter an optional description for this file:', 'Custom markdown documentation');
@@ -511,9 +511,6 @@
             if (description === null) {
                 description = ''; // User cancelled description, but we continue
             }
-            
-            console.log('Custom Markdown: Description:', description);
-            console.log('Custom Markdown: Sending AJAX request...');
             
             // Set flag to prevent duplicate requests
             self.creatingCustomFile = true;
@@ -525,9 +522,6 @@
                 description: description
             };
             
-            console.log('Custom Markdown: AJAX data =', ajaxData);
-            console.log('Custom Markdown: AJAX URL =', mdsmData.ajaxUrl);
-            
             // Create the file
             $.ajax({
                 url: mdsmData.ajaxUrl,
@@ -535,7 +529,6 @@
                 dataType: 'json',
                 data: ajaxData,
                 success: function(response) {
-                    console.log('Custom Markdown: AJAX success response:', response);
                     self.creatingCustomFile = false;  // Reset flag
                     
                     if (response.success) {
@@ -549,7 +542,6 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Custom Markdown: AJAX error:', {xhr: xhr, status: status, error: error, responseText: xhr.responseText});
                     self.creatingCustomFile = false;  // Reset flag
                     self.showToast('Error creating custom markdown file. Check console for details.', 'error');
                 }
@@ -612,21 +604,11 @@
     
 })(jQuery);
 
-console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
-
 // Public Index functionality
 (function($) {
     'use strict';
     
-    console.log('=== PUBLIC INDEX JAVASCRIPT LOADED ===');
-    
     $(document).ready(function() {
-        console.log('=== PUBLIC INDEX DOCUMENT READY ===');
-        console.log('mdsmData exists:', typeof mdsmData !== 'undefined');
-        console.log('mdsmData:', typeof mdsmData !== 'undefined' ? mdsmData : 'UNDEFINED');
-        console.log('Save button exists:', $('#save-public-index').length);
-        console.log('Save button element:', $('#save-public-index')[0]);
-        
         // Toggle between page and shortcode mode
         $('input[name="index_output_mode"]').on('change', function() {
             var mode = $(this).val();
@@ -666,7 +648,6 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
         // Save public index settings
         $('#save-public-index').on('click', function(e) {
             e.preventDefault();
-            console.log('Save button clicked'); // Debug
             
             var $button = $(this);
             var originalHtml = $button.html();
@@ -677,16 +658,11 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
             var mode = $('input[name="index_output_mode"]:checked').val();
             var enabled = mode === 'page' ? '1' : '0';
             
-            console.log('Mode:', mode, 'Enabled:', enabled); // Debug
-            
             // Get page ID
             var pageId = $('#index_page_id').val();
             
-            console.log('Page ID:', pageId); // Debug
-            
             // Validate page selection if page mode is enabled
             if (mode === 'page' && !pageId) {
-                console.log('Validation failed: No page selected'); // Debug
                 if (typeof window.MDSM !== 'undefined' && window.MDSM.showToast) {
                     window.MDSM.showToast('Please select a page to display the Public Index', 'error');
                 } else {
@@ -702,8 +678,6 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
                 publicDocs[$(this).val()] = true;
             });
             
-            console.log('Public docs:', publicDocs); // Debug
-            
             // Get descriptions
             var descriptions = {};
             $('input[name^="doc_desc_"]').each(function() {
@@ -714,8 +688,6 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
                 }
             });
             
-            console.log('Descriptions:', descriptions); // Debug
-            
             var ajaxData = {
                 action: 'mdsm_save_public_index',
                 nonce: mdsmData.nonce,
@@ -725,15 +697,12 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
                 descriptions: descriptions
             };
             
-            console.log('Sending AJAX request:', ajaxData); // Debug
-            
             // Save via AJAX
             $.ajax({
                 url: mdsmData.ajaxUrl,
                 type: 'POST',
                 data: ajaxData,
                 success: function(response) {
-                    console.log('AJAX success response:', response); // Debug
                     if (response.success) {
                         if (typeof window.MDSM !== 'undefined' && window.MDSM.showToast) {
                             window.MDSM.showToast('Public index settings saved successfully!', 'success');
@@ -746,7 +715,6 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
                             location.reload();
                         }, 1500);
                     } else {
-                        console.error('Save failed:', response.data); // Debug
                         var errorMsg = response.data && response.data.message ? response.data.message : 'Error saving settings';
                         if (typeof window.MDSM !== 'undefined' && window.MDSM.showToast) {
                             window.MDSM.showToast(errorMsg, 'error');
@@ -757,7 +725,6 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('AJAX Error:', {xhr: xhr, status: status, error: error, responseText: xhr.responseText}); // Debug
                     var errorMsg = 'Error saving settings. Check console for details.';
                     if (typeof window.MDSM !== 'undefined' && window.MDSM.showToast) {
                         window.MDSM.showToast(errorMsg, 'error');
@@ -769,5 +736,59 @@ console.log('>>> BEFORE PUBLIC INDEX BLOCK <<<');
             });
         });
     });
+    
+    /**
+     * View changelog for a document
+     */
+    MDSM.viewChangelog = function(fileName) {
+        var self = this;
+        
+        $.ajax({
+            url: mdsmData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'mdsm_get_changelog',
+                nonce: mdsmData.nonce,
+                file_name: fileName
+            },
+            success: function(response) {
+                if (response.success) {
+                    var changelog = response.data.changelog;
+                    var displayName = response.data.file_name;
+                    
+                    // Set filename in modal
+                    $('#mdsm-changelog-filename').text('File: ' + displayName);
+                    
+                    // Build changelog HTML
+                    var html = '';
+                    if (changelog && changelog.length > 0) {
+                        changelog.forEach(function(entry) {
+                            var actionClass = 'mdsm-changelog-action-' + entry.action.toLowerCase();
+                            html += '<div class="mdsm-changelog-entry">';
+                            html += '  <div class="mdsm-changelog-header">';
+                            html += '    <span class="mdsm-changelog-action ' + actionClass + '">' + entry.action + '</span>';
+                            html += '    <span class="mdsm-changelog-timestamp">' + entry.timestamp + '</span>';
+                            html += '  </div>';
+                            html += '  <div class="mdsm-changelog-details">';
+                            html += '    <div><span class="mdsm-changelog-label">User:</span> <span class="mdsm-changelog-value">' + entry.user + '</span></div>';
+                            html += '    <div><span class="mdsm-changelog-label">Checksum:</span> <span class="mdsm-changelog-value">' + entry.checksum + '</span></div>';
+                            html += '  </div>';
+                            html += '</div>';
+                        });
+                    } else {
+                        html = '<p class="mdsm-empty-message">No changelog entries found.</p>';
+                    }
+                    
+                    $('#mdsm-changelog-content').html(html);
+                    $('#mdsm-changelog-modal').addClass('active');
+                } else {
+                    self.showToast(response.data.message || 'Failed to load changelog', 'error');
+                }
+            },
+            error: function() {
+                self.showToast('Error loading changelog', 'error');
+            }
+        });
+    };
     
 })(jQuery);

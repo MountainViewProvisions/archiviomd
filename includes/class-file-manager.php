@@ -148,12 +148,20 @@ class MDSM_File_Manager {
         // Set proper permissions
         @chmod($file_path, 0644);
         
+        // Update metadata for meta files (Markdown documents)
+        $metadata = null;
+        if ($file_type === 'meta') {
+            $metadata_manager = new MDSM_Document_Metadata();
+            $metadata = $metadata_manager->update_metadata($file_name, $content);
+        }
+        
         return array(
             'success' => true,
             'message' => 'File saved successfully',
             'url' => $this->get_file_url($file_type, $file_name),
             'location' => $this->get_file_location($file_type, $file_name),
-            'exists' => true
+            'exists' => true,
+            'metadata' => $metadata
         );
     }
     
@@ -164,6 +172,12 @@ class MDSM_File_Manager {
         $file_path = $this->get_file_path($file_type, $file_name);
         
         if (!$file_path || !file_exists($file_path)) {
+            // Clean up metadata even if file doesn't exist
+            if ($file_type === 'meta') {
+                $metadata_manager = new MDSM_Document_Metadata();
+                $metadata_manager->delete_metadata($file_name);
+            }
+            
             return array(
                 'success' => true,
                 'message' => 'File does not exist',
@@ -178,6 +192,12 @@ class MDSM_File_Manager {
                 'success' => false,
                 'message' => 'Could not delete file: ' . $file_path
             );
+        }
+        
+        // Delete metadata for meta files
+        if ($file_type === 'meta') {
+            $metadata_manager = new MDSM_Document_Metadata();
+            $metadata_manager->delete_metadata($file_name);
         }
         
         return array(
@@ -201,13 +221,21 @@ class MDSM_File_Manager {
     public function get_file_info($file_type, $file_name) {
         $exists = $this->file_exists($file_type, $file_name);
         
-        return array(
+        $info = array(
             'name' => $file_name,
             'exists' => $exists,
             'url' => $exists ? $this->get_file_url($file_type, $file_name) : false,
             'location' => $this->get_file_location($file_type, $file_name),
             'content' => $exists ? $this->read_file($file_type, $file_name) : '',
         );
+        
+        // Add metadata for meta files
+        if ($file_type === 'meta' && $exists) {
+            $metadata_manager = new MDSM_Document_Metadata();
+            $info['metadata'] = $metadata_manager->get_metadata($file_name);
+        }
+        
+        return $info;
     }
     
     /**

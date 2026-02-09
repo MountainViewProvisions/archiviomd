@@ -61,6 +61,9 @@ class Meta_Documentation_SEO_Manager {
         // Initialize public index
         new MDSM_Public_Index();
         
+        // Initialize compliance tools (singleton)
+        MDSM_Compliance_Tools::get_instance();
+        
         // Initialize admin
         if (is_admin()) {
             add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -81,6 +84,7 @@ class Meta_Documentation_SEO_Manager {
         add_action('wp_ajax_mdsm_save_public_index', array($this, 'ajax_save_public_index'));
         add_action('wp_ajax_mdsm_create_custom_markdown', array($this, 'ajax_create_custom_markdown'));
         add_action('wp_ajax_mdsm_delete_custom_markdown', array($this, 'ajax_delete_custom_markdown'));
+        add_action('wp_ajax_mdsm_get_changelog', array($this, 'ajax_get_changelog'));
         
         // Auto-update sitemaps if enabled
         add_action('save_post', array($this, 'maybe_auto_update_sitemap'));
@@ -101,10 +105,12 @@ class Meta_Documentation_SEO_Manager {
      */
     private function load_dependencies() {
         require_once MDSM_PLUGIN_DIR . 'includes/class-file-manager.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-document-metadata.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-sitemap-generator.php';
         require_once MDSM_PLUGIN_DIR . 'includes/file-definitions.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-html-renderer.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-public-index.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-compliance-tools.php';
     }
     
     /**
@@ -457,13 +463,9 @@ class Meta_Documentation_SEO_Manager {
      * AJAX: Save public index settings
      */
     public function ajax_save_public_index() {
-        error_log('MDSM: ajax_save_public_index called'); // Debug
-        error_log('POST data: ' . print_r($_POST, true)); // Debug
-        
         check_ajax_referer('mdsm_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            error_log('MDSM: Insufficient permissions'); // Debug
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
@@ -472,17 +474,13 @@ class Meta_Documentation_SEO_Manager {
         $public_docs = isset($_POST['public_docs']) ? $_POST['public_docs'] : array();
         $descriptions = isset($_POST['descriptions']) ? $_POST['descriptions'] : array();
         
-        error_log('MDSM: enabled=' . ($enabled ? 'true' : 'false') . ', page_id=' . $page_id); // Debug
-        
         // Validate page selection if enabled
         if ($enabled && !$page_id) {
-            error_log('MDSM: Page required but not provided'); // Debug
             wp_send_json_error(array('message' => 'Page selection is required when page mode is enabled'));
         }
         
         // Verify page exists if page_id is set
         if ($page_id && get_post_status($page_id) !== 'publish') {
-            error_log('MDSM: Page does not exist or not published: ' . $page_id); // Debug
             wp_send_json_error(array('message' => 'Selected page does not exist or is not published'));
         }
         
@@ -494,8 +492,6 @@ class Meta_Documentation_SEO_Manager {
             }
         }
         
-        error_log('MDSM: Sanitized docs: ' . print_r($sanitized_docs, true)); // Debug
-        
         // Sanitize descriptions
         $sanitized_descriptions = array();
         if (is_array($descriptions)) {
@@ -504,15 +500,11 @@ class Meta_Documentation_SEO_Manager {
             }
         }
         
-        error_log('MDSM: Sanitized descriptions: ' . print_r($sanitized_descriptions, true)); // Debug
-        
         // Save options
         $result1 = update_option('mdsm_public_index_enabled', $enabled);
         $result2 = update_option('mdsm_public_index_page_id', $page_id);
         $result3 = update_option('mdsm_public_documents', $sanitized_docs);
         $result4 = update_option('mdsm_document_descriptions', $sanitized_descriptions);
-        
-        error_log('MDSM: Save results - enabled:' . ($result1?'ok':'fail') . ' page_id:' . ($result2?'ok':'fail') . ' docs:' . ($result3?'ok':'fail') . ' desc:' . ($result4?'ok':'fail')); // Debug
         
         wp_send_json_success(array(
             'message' => 'Settings saved successfully',
@@ -525,64 +517,46 @@ class Meta_Documentation_SEO_Manager {
      * AJAX: Create custom markdown file
      */
     public function ajax_create_custom_markdown() {
-        error_log('====== MDSM: HANDLER REACHED ======');
-        error_log('POST data: ' . print_r($_POST, true));
-        error_log('Expected nonce name: mdsm_nonce');
-        error_log('Received nonce value: ' . (isset($_POST['nonce']) ? $_POST['nonce'] : 'NOT SET'));
-        error_log('MDSM: About to check nonce...');
-        
         check_ajax_referer('mdsm_nonce', 'nonce');
         
-        error_log('MDSM: Nonce check passed!');
-        
         if (!current_user_can('manage_options')) {
-            error_log('MDSM: Insufficient permissions');
             wp_send_json_error(array('message' => 'Insufficient permissions'));
-            exit; // Explicit exit
+            exit;
         }
         
         $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
         $description = isset($_POST['description']) ? sanitize_text_field($_POST['description']) : '';
         
-        error_log('MDSM: Filename: ' . $filename . ', Description: ' . $description);
-        
         if (empty($filename)) {
-            error_log('MDSM: Filename is empty');
             wp_send_json_error(array('message' => 'Filename is required'));
-            exit; // Explicit exit
+            exit;
         }
         
         // Sanitize filename
         $filename = sanitize_file_name($filename);
-        error_log('MDSM: Sanitized filename: ' . $filename);
         
         // Ensure .md extension
         if (!preg_match('/\.md$/', $filename)) {
             $filename .= '.md';
-            error_log('MDSM: Added .md extension: ' . $filename);
         }
         
         // Validate filename (no path traversal, etc.)
         if (preg_match('/[\/\\\\]/', $filename) || $filename === '.md' || $filename === '..md') {
-            error_log('MDSM: Invalid filename detected');
             wp_send_json_error(array('message' => 'Invalid filename'));
-            exit; // Explicit exit
+            exit;
         }
         
         // Check if file already exists in predefined files
         $meta_files = mdsm_get_meta_files();
         foreach ($meta_files as $category => $files) {
             if (isset($files[$filename])) {
-                error_log('MDSM: Filename conflicts with predefined file in ' . $category);
                 wp_send_json_error(array('message' => 'This filename is already defined in ' . $category));
-                exit; // Explicit exit
+                exit;
             }
         }
         
         // Add to custom files
-        error_log('MDSM: Attempting to add custom file');
         if (mdsm_add_custom_markdown_file($filename, $description)) {
-            error_log('MDSM: Custom file added successfully');
             // Flush rewrite rules to include the new file
             flush_rewrite_rules();
             
@@ -591,11 +565,10 @@ class Meta_Documentation_SEO_Manager {
                 'filename' => $filename,
                 'description' => $description
             ));
-            exit; // Explicit exit
+            exit;
         } else {
-            error_log('MDSM: Custom file already exists');
             wp_send_json_error(array('message' => 'This custom markdown file already exists'));
-            exit; // Explicit exit
+            exit;
         }
     }
     
@@ -623,6 +596,49 @@ class Meta_Documentation_SEO_Manager {
         } else {
             wp_send_json_error(array('message' => 'Failed to delete custom markdown file'));
         }
+    }
+    
+    /**
+     * AJAX: Get changelog for a document
+     */
+    public function ajax_get_changelog() {
+        check_ajax_referer('mdsm_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Insufficient permissions'));
+        }
+        
+        $file_name = isset($_POST['file_name']) ? sanitize_text_field($_POST['file_name']) : '';
+        
+        if (empty($file_name)) {
+            wp_send_json_error(array('message' => 'File name is required'));
+        }
+        
+        $metadata_manager = new MDSM_Document_Metadata();
+        $changelog = $metadata_manager->get_changelog($file_name);
+        
+        if (empty($changelog)) {
+            wp_send_json_error(array('message' => 'No changelog found for this document'));
+        }
+        
+        // Format changelog for display
+        $formatted_changelog = array();
+        foreach ($changelog as $entry) {
+            $user = get_userdata($entry['user_id']);
+            $user_display = $user ? $user->display_name : 'Unknown User';
+            
+            $formatted_changelog[] = array(
+                'timestamp' => gmdate('Y-m-d H:i:s \U\T\C', strtotime($entry['timestamp'])),
+                'user' => $user_display,
+                'action' => ucfirst($entry['action']),
+                'checksum' => substr($entry['checksum'], 0, 16) . '...'
+            );
+        }
+        
+        wp_send_json_success(array(
+            'changelog' => $formatted_changelog,
+            'file_name' => $file_name
+        ));
     }
     
     /**
