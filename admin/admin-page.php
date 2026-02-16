@@ -34,18 +34,18 @@ $seo_total = count($seo_files);
 <div class="wrap mdsm-admin-wrap">
     <h1 class="mdsm-page-title">
         <span class="dashicons dashicons-media-document"></span>
-        <?php _e('Meta Documentation & SEO Manager', 'meta-doc-seo'); ?>
+        <?php esc_html_e('Meta Documentation & SEO Manager', 'archiviomd'); ?>
     </h1>
     
     <div class="mdsm-header-info">
         <p class="mdsm-description">
-            <?php _e('Manage your site\'s meta-documentation files, SEO configuration files, and XML sitemaps from one central location.', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Manage your site\'s meta-documentation files, SEO configuration files, and XML sitemaps from one central location.', 'archiviomd'); ?>
         </p>
     </div>
 
     <!-- Search/Filter Bar -->
     <div class="mdsm-search-bar">
-        <input type="text" id="mdsm-search" class="mdsm-search-input" placeholder="<?php esc_attr_e('Search files...', 'meta-doc-seo'); ?>">
+        <input type="text" id="mdsm-search" class="mdsm-search-input" placeholder="<?php esc_attr_e('Search files...', 'archiviomd'); ?>">
         <span class="mdsm-search-icon dashicons dashicons-search"></span>
     </div>
 
@@ -53,29 +53,29 @@ $seo_total = count($seo_files);
     <div class="mdsm-tabs">
         <button class="mdsm-tab-button active" data-tab="meta-docs">
             <span class="dashicons dashicons-media-document"></span>
-            <?php _e('Meta Documentation', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Meta Documentation', 'archiviomd'); ?>
             <span class="mdsm-badge"><?php echo esc_html($meta_exists . '/' . $meta_total); ?></span>
         </button>
         <button class="mdsm-tab-button" data-tab="seo-files">
             <span class="dashicons dashicons-search"></span>
-            <?php _e('SEO Files', 'meta-doc-seo'); ?>
+            <?php esc_html_e('SEO Files', 'archiviomd'); ?>
             <span class="mdsm-badge"><?php echo esc_html($seo_exists . '/' . $seo_total); ?></span>
         </button>
         <button class="mdsm-tab-button" data-tab="sitemaps">
             <span class="dashicons dashicons-networking"></span>
-            <?php _e('Sitemaps', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Sitemaps', 'archiviomd'); ?>
         </button>
         <button class="mdsm-tab-button" data-tab="public-index">
             <span class="dashicons dashicons-admin-page"></span>
-            <?php _e('Public Index', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Public Index', 'archiviomd'); ?>
         </button>
     </div>
 
     <!-- Tab Content: Meta Documentation -->
     <div class="mdsm-tab-content active" id="tab-meta-docs">
         <div class="mdsm-section-header">
-            <h2><?php _e('Meta Documentation Files', 'meta-doc-seo'); ?></h2>
-            <p><?php _e('These Markdown files provide comprehensive documentation about your site, organized by category.', 'meta-doc-seo'); ?></p>
+            <h2><?php esc_html_e('Meta Documentation Files', 'archiviomd'); ?></h2>
+            <p><?php esc_html_e('These Markdown files provide comprehensive documentation about your site, organized by category.', 'archiviomd'); ?></p>
         </div>
 
         <?php foreach ($meta_files as $category => $files) : ?>
@@ -101,14 +101,14 @@ $seo_total = count($seo_files);
                                         <span class="mdsm-file-icon dashicons dashicons-media-text"></span>
                                         <span class="mdsm-file-name"><?php echo esc_html($file_name); ?></span>
                                         <?php if ($file_info['exists']) : ?>
-                                            <span class="mdsm-status-badge mdsm-status-exists"><?php _e('Active', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-status-badge mdsm-status-exists"><?php esc_html_e('Active', 'archiviomd'); ?></span>
                                         <?php else : ?>
-                                            <span class="mdsm-status-badge mdsm-status-empty"><?php _e('Empty', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-status-badge mdsm-status-empty"><?php esc_html_e('Empty', 'archiviomd'); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <button class="mdsm-edit-button" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>">
                                         <span class="dashicons dashicons-edit"></span>
-                                        <?php _e('Edit', 'meta-doc-seo'); ?>
+                                        <?php esc_html_e('Edit', 'archiviomd'); ?>
                                     </button>
                                 </div>
                                 
@@ -150,14 +150,20 @@ $seo_total = count($seo_files);
                                                     </code>
                                                 </div>
                                             <?php endif; ?>
-                                            <?php if (!empty($metadata['checksum'])) : ?>
+                                            <?php if (!empty($metadata['checksum'])) : 
+                                                // Parse the packed hash format to get algorithm and mode
+                                                $hash_info = MDSM_Hash_Helper::unpack($metadata['checksum']);
+                                                $algo_label = MDSM_Hash_Helper::algorithm_label($hash_info['algorithm']);
+                                                $mode_label = ($hash_info['mode'] === 'hmac') ? 'HMAC-' : '';
+                                                $display_label = $mode_label . $algo_label;
+                                            ?>
                                                 <div class="mdsm-metadata-row">
                                                     <span class="mdsm-metadata-label">
                                                         <span class="dashicons dashicons-shield"></span>
-                                                        SHA-256:
+                                                        <?php echo esc_html($display_label); ?>:
                                                     </span>
                                                     <code class="mdsm-metadata-value mdsm-checksum" title="<?php echo esc_attr($metadata['checksum']); ?>">
-                                                        <?php echo esc_html(substr($metadata['checksum'], 0, 16) . '...'); ?>
+                                                        <?php echo esc_html(substr($hash_info['hash'], 0, 16) . '...'); ?>
                                                     </code>
                                                 </div>
                                             <?php endif; ?>
@@ -178,25 +184,25 @@ $seo_total = count($seo_files);
                                         <div class="mdsm-file-actions">
                                             <a href="<?php echo esc_url($file_info['url']); ?>" target="_blank" class="mdsm-view-link">
                                                 <span class="dashicons dashicons-external"></span>
-                                                <?php _e('View MD', 'meta-doc-seo'); ?>
+                                                <?php esc_html_e('View MD', 'archiviomd'); ?>
                                             </a>
-                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'meta-doc-seo'); ?>">
+                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'archiviomd'); ?>">
                                                 <span class="dashicons dashicons-admin-links"></span>
-                                                <?php _e('Copy MD Link', 'meta-doc-seo'); ?>
+                                                <?php esc_html_e('Copy MD Link', 'archiviomd'); ?>
                                             </button>
                                             <?php if ($html_exists) : ?>
                                                 <a href="<?php echo esc_url($html_url); ?>" target="_blank" class="mdsm-view-link mdsm-html-link">
                                                     <span class="dashicons dashicons-media-document"></span>
-                                                    <?php _e('View HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('View HTML', 'archiviomd'); ?>
                                                 </a>
-                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'meta-doc-seo'); ?>">
+                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'archiviomd'); ?>">
                                                     <span class="dashicons dashicons-admin-links"></span>
-                                                    <?php _e('Copy HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('Copy HTML', 'archiviomd'); ?>
                                                 </button>
                                             <?php else : ?>
-                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'meta-doc-seo'); ?>">
+                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'archiviomd'); ?>">
                                                     <span class="dashicons dashicons-media-code"></span>
-                                                    <?php _e('Generate HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('Generate HTML', 'archiviomd'); ?>
                                                 </button>
                                             <?php endif; ?>
                                         </div>
@@ -217,7 +223,7 @@ $seo_total = count($seo_files);
             <div class="mdsm-category-header">
                 <h3>
                     <span class="dashicons dashicons-edit"></span>
-                    <?php _e('Custom Markdown', 'meta-doc-seo'); ?>
+                    <?php esc_html_e('Custom Markdown', 'archiviomd'); ?>
                 </h3>
                 <button class="mdsm-collapse-toggle" aria-expanded="false">
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
@@ -227,13 +233,13 @@ $seo_total = count($seo_files);
             <div class="mdsm-category-content">
                 <div class="mdsm-custom-markdown-controls">
                     <button type="button" id="add-custom-markdown">
-                        <?php _e('Custom Markdown', 'meta-doc-seo'); ?>
+                        <?php esc_html_e('Custom Markdown', 'archiviomd'); ?>
                     </button>
                 </div>
                 
                 <div class="mdsm-file-grid">
                     <?php if (empty($custom_files)) : ?>
-                        <p class="mdsm-empty-message"><?php _e('No custom markdown files yet. Click "Custom Markdown" to create one.', 'meta-doc-seo'); ?></p>
+                        <p class="mdsm-empty-message"><?php esc_html_e('No custom markdown files yet. Click "Custom Markdown" to create one.', 'archiviomd'); ?></p>
                     <?php else : ?>
                         <?php foreach ($custom_files as $file_name => $description) : 
                             $file_info = $file_manager->get_file_info('meta', $file_name);
@@ -244,17 +250,17 @@ $seo_total = count($seo_files);
                                         <span class="mdsm-file-icon dashicons dashicons-media-text"></span>
                                         <span class="mdsm-file-name"><?php echo esc_html($file_name); ?></span>
                                         <?php if ($file_info['exists']) : ?>
-                                            <span class="mdsm-status-badge mdsm-status-exists"><?php _e('Active', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-status-badge mdsm-status-exists"><?php esc_html_e('Active', 'archiviomd'); ?></span>
                                         <?php else : ?>
-                                            <span class="mdsm-status-badge mdsm-status-empty"><?php _e('Empty', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-status-badge mdsm-status-empty"><?php esc_html_e('Empty', 'archiviomd'); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="mdsm-custom-file-actions">
                                         <button class="mdsm-edit-button" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>">
                                             <span class="dashicons dashicons-edit"></span>
-                                            <?php _e('Edit', 'meta-doc-seo'); ?>
+                                            <?php esc_html_e('Edit', 'archiviomd'); ?>
                                         </button>
-                                        <button class="mdsm-delete-custom-file" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Delete custom file entry', 'meta-doc-seo'); ?>">
+                                        <button class="mdsm-delete-custom-file" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Delete custom file entry', 'archiviomd'); ?>">
                                             <span class="dashicons dashicons-trash"></span>
                                         </button>
                                     </div>
@@ -277,25 +283,25 @@ $seo_total = count($seo_files);
                                         <div class="mdsm-file-actions">
                                             <a href="<?php echo esc_url($file_info['url']); ?>" target="_blank" class="mdsm-view-link">
                                                 <span class="dashicons dashicons-external"></span>
-                                                <?php _e('View MD', 'meta-doc-seo'); ?>
+                                                <?php esc_html_e('View MD', 'archiviomd'); ?>
                                             </a>
-                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'meta-doc-seo'); ?>">
+                                            <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>" title="<?php esc_attr_e('Copy MD Link', 'archiviomd'); ?>">
                                                 <span class="dashicons dashicons-admin-links"></span>
-                                                <?php _e('Copy MD Link', 'meta-doc-seo'); ?>
+                                                <?php esc_html_e('Copy MD Link', 'archiviomd'); ?>
                                             </button>
                                             <?php if ($html_exists) : ?>
                                                 <a href="<?php echo esc_url($html_url); ?>" target="_blank" class="mdsm-view-link mdsm-html-link">
                                                     <span class="dashicons dashicons-media-document"></span>
-                                                    <?php _e('View HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('View HTML', 'archiviomd'); ?>
                                                 </a>
-                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'meta-doc-seo'); ?>">
+                                                <button class="mdsm-copy-html-link" data-url="<?php echo esc_attr($html_url); ?>" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Copy HTML Link', 'archiviomd'); ?>">
                                                     <span class="dashicons dashicons-admin-links"></span>
-                                                    <?php _e('Copy HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('Copy HTML', 'archiviomd'); ?>
                                                 </button>
                                             <?php else : ?>
-                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'meta-doc-seo'); ?>">
+                                                <button class="mdsm-generate-html" data-file-type="meta" data-file-name="<?php echo esc_attr($file_name); ?>" title="<?php esc_attr_e('Generate HTML Version', 'archiviomd'); ?>">
                                                     <span class="dashicons dashicons-media-document"></span>
-                                                    <?php _e('Generate HTML', 'meta-doc-seo'); ?>
+                                                    <?php esc_html_e('Generate HTML', 'archiviomd'); ?>
                                                 </button>
                                             <?php endif; ?>
                                         </div>
@@ -312,8 +318,8 @@ $seo_total = count($seo_files);
     <!-- Tab Content: SEO Files -->
     <div class="mdsm-tab-content" id="tab-seo-files">
         <div class="mdsm-section-header">
-            <h2><?php _e('SEO & Crawling Files', 'meta-doc-seo'); ?></h2>
-            <p><?php _e('Control how search engines and AI crawlers interact with your site.', 'meta-doc-seo'); ?></p>
+            <h2><?php esc_html_e('SEO & Crawling Files', 'archiviomd'); ?></h2>
+            <p><?php esc_html_e('Control how search engines and AI crawlers interact with your site.', 'archiviomd'); ?></p>
         </div>
 
         <div class="mdsm-file-grid">
@@ -326,14 +332,14 @@ $seo_total = count($seo_files);
                             <span class="mdsm-file-icon dashicons dashicons-admin-generic"></span>
                             <span class="mdsm-file-name"><?php echo esc_html($file_name); ?></span>
                             <?php if ($file_info['exists']) : ?>
-                                <span class="mdsm-status-badge mdsm-status-exists"><?php _e('Active', 'meta-doc-seo'); ?></span>
+                                <span class="mdsm-status-badge mdsm-status-exists"><?php esc_html_e('Active', 'archiviomd'); ?></span>
                             <?php else : ?>
-                                <span class="mdsm-status-badge mdsm-status-empty"><?php _e('Empty', 'meta-doc-seo'); ?></span>
+                                <span class="mdsm-status-badge mdsm-status-empty"><?php esc_html_e('Empty', 'archiviomd'); ?></span>
                             <?php endif; ?>
                         </div>
                         <button class="mdsm-edit-button" data-file-type="seo" data-file-name="<?php echo esc_attr($file_name); ?>">
                             <span class="dashicons dashicons-edit"></span>
-                            <?php _e('Edit', 'meta-doc-seo'); ?>
+                            <?php esc_html_e('Edit', 'archiviomd'); ?>
                         </button>
                     </div>
                     
@@ -350,11 +356,11 @@ $seo_total = count($seo_files);
                             <div class="mdsm-file-actions">
                                 <a href="<?php echo esc_url($file_info['url']); ?>" target="_blank" class="mdsm-view-link">
                                     <span class="dashicons dashicons-external"></span>
-                                    <?php _e('View', 'meta-doc-seo'); ?>
+                                    <?php esc_html_e('View', 'archiviomd'); ?>
                                 </a>
                                 <button class="mdsm-copy-link" data-url="<?php echo esc_attr($file_info['url']); ?>">
                                     <span class="dashicons dashicons-admin-links"></span>
-                                    <?php _e('Copy Link', 'meta-doc-seo'); ?>
+                                    <?php esc_html_e('Copy Link', 'archiviomd'); ?>
                                 </button>
                             </div>
                         <?php endif; ?>
@@ -375,8 +381,8 @@ $seo_total = count($seo_files);
     <!-- Tab Content: Sitemaps -->
     <div class="mdsm-tab-content" id="tab-sitemaps">
         <div class="mdsm-section-header">
-            <h2><?php _e('XML Sitemaps', 'meta-doc-seo'); ?></h2>
-            <p><?php _e('Generate and manage XML sitemaps to help search engines discover and index your content.', 'meta-doc-seo'); ?></p>
+            <h2><?php esc_html_e('XML Sitemaps', 'archiviomd'); ?></h2>
+            <p><?php esc_html_e('Generate and manage XML sitemaps to help search engines discover and index your content.', 'archiviomd'); ?></p>
         </div>
 
         <div class="mdsm-sitemap-panel">
@@ -386,26 +392,26 @@ $seo_total = count($seo_files);
                         <span class="dashicons dashicons-yes-alt"></span>
                     </div>
                     <div class="mdsm-status-info">
-                        <h3><?php _e('Sitemap Active', 'meta-doc-seo'); ?></h3>
+                        <h3><?php esc_html_e('Sitemap Active', 'archiviomd'); ?></h3>
                         <p>
                             <?php 
                             if ($sitemap_info['type'] === 'small') {
-                                _e('Single sitemap configuration (for small sites)', 'meta-doc-seo');
+                                esc_html_e('Single sitemap configuration (for small sites)', 'archiviomd');
                             } else {
-                                printf(__('Sitemap index configuration (%d files)', 'meta-doc-seo'), $sitemap_info['file_count']);
+                                printf(__('Sitemap index configuration (%d files)', 'archiviomd'), $sitemap_info['file_count']);
                             }
                             ?>
                         </p>
                         <div class="mdsm-sitemap-meta">
                             <div>
-                                <strong><?php _e('Main File:', 'meta-doc-seo'); ?></strong>
+                                <strong><?php esc_html_e('Main File:', 'archiviomd'); ?></strong>
                                 <a href="<?php echo esc_url($sitemap_info['url']); ?>" target="_blank">
                                     <?php echo esc_html($sitemap_info['main_file']); ?>
                                     <span class="dashicons dashicons-external"></span>
                                 </a>
                             </div>
                             <div>
-                                <strong><?php _e('Last Updated:', 'meta-doc-seo'); ?></strong>
+                                <strong><?php esc_html_e('Last Updated:', 'archiviomd'); ?></strong>
                                 <?php echo esc_html($sitemap_info['last_modified']); ?>
                             </div>
                         </div>
@@ -417,29 +423,29 @@ $seo_total = count($seo_files);
                         <span class="dashicons dashicons-info"></span>
                     </div>
                     <div class="mdsm-status-info">
-                        <h3><?php _e('No Sitemap Generated', 'meta-doc-seo'); ?></h3>
-                        <p><?php _e('Generate a sitemap to help search engines discover your content.', 'meta-doc-seo'); ?></p>
+                        <h3><?php esc_html_e('No Sitemap Generated', 'archiviomd'); ?></h3>
+                        <p><?php esc_html_e('Generate a sitemap to help search engines discover your content.', 'archiviomd'); ?></p>
                     </div>
                 </div>
             <?php endif; ?>
 
             <div class="mdsm-sitemap-options">
-                <h3><?php _e('Sitemap Configuration', 'meta-doc-seo'); ?></h3>
+                <h3><?php esc_html_e('Sitemap Configuration', 'archiviomd'); ?></h3>
                 
                 <div class="mdsm-option-group">
                     <label class="mdsm-radio-label">
                         <input type="radio" name="sitemap_type" value="small" <?php checked($sitemap_type, 'small'); ?>>
                         <div class="mdsm-radio-content">
-                            <strong><?php _e('Small Site (Single Sitemap)', 'meta-doc-seo'); ?></strong>
-                            <p><?php _e('All URLs in a single sitemap.xml file. Ideal for sites with fewer than 50,000 URLs.', 'meta-doc-seo'); ?></p>
+                            <strong><?php esc_html_e('Small Site (Single Sitemap)', 'archiviomd'); ?></strong>
+                            <p><?php esc_html_e('All URLs in a single sitemap.xml file. Ideal for sites with fewer than 50,000 URLs.', 'archiviomd'); ?></p>
                         </div>
                     </label>
 
                     <label class="mdsm-radio-label">
                         <input type="radio" name="sitemap_type" value="large" <?php checked($sitemap_type, 'large'); ?>>
                         <div class="mdsm-radio-content">
-                            <strong><?php _e('Large Site (Multiple Sitemaps)', 'meta-doc-seo'); ?></strong>
-                            <p><?php _e('Separate sitemaps for posts, pages, and custom post types, with a sitemap_index.xml referencing them all.', 'meta-doc-seo'); ?></p>
+                            <strong><?php esc_html_e('Large Site (Multiple Sitemaps)', 'archiviomd'); ?></strong>
+                            <p><?php esc_html_e('Separate sitemaps for posts, pages, and custom post types, with a sitemap_index.xml referencing them all.', 'archiviomd'); ?></p>
                         </div>
                     </label>
                 </div>
@@ -448,8 +454,8 @@ $seo_total = count($seo_files);
                     <label class="mdsm-checkbox-label">
                         <input type="checkbox" id="auto_update_sitemap" <?php checked($auto_update, true); ?>>
                         <div class="mdsm-checkbox-content">
-                            <strong><?php _e('Automatic Updates', 'meta-doc-seo'); ?></strong>
-                            <p><?php _e('Automatically regenerate the sitemap whenever content is added, updated, or deleted.', 'meta-doc-seo'); ?></p>
+                            <strong><?php esc_html_e('Automatic Updates', 'archiviomd'); ?></strong>
+                            <p><?php esc_html_e('Automatically regenerate the sitemap whenever content is added, updated, or deleted.', 'archiviomd'); ?></p>
                         </div>
                     </label>
                 </div>
@@ -457,7 +463,7 @@ $seo_total = count($seo_files);
                 <div class="mdsm-button-group">
                     <button type="button" id="generate-sitemap" class="button button-primary button-hero">
                         <span class="dashicons dashicons-update"></span>
-                        <?php _e('Generate Sitemap Now', 'meta-doc-seo'); ?>
+                        <?php esc_html_e('Generate Sitemap Now', 'archiviomd'); ?>
                     </button>
                 </div>
             </div>
@@ -474,7 +480,7 @@ $seo_total = count($seo_files);
 <div id="mdsm-editor-modal" class="mdsm-modal">
     <div class="mdsm-modal-content">
         <div class="mdsm-modal-header">
-            <h2 id="mdsm-editor-title"><?php _e('Edit File', 'meta-doc-seo'); ?></h2>
+            <h2 id="mdsm-editor-title"><?php esc_html_e('Edit File', 'archiviomd'); ?></h2>
             <button class="mdsm-modal-close">
                 <span class="dashicons dashicons-no"></span>
             </button>
@@ -491,15 +497,15 @@ $seo_total = count($seo_files);
             <textarea id="mdsm-editor-textarea" class="mdsm-editor-textarea" rows="20"></textarea>
             
             <div class="mdsm-editor-help">
-                <p><strong><?php _e('Tip:', 'meta-doc-seo'); ?></strong> <?php _e('Leave the content empty and save to delete the file.', 'meta-doc-seo'); ?></p>
+                <p><strong><?php esc_html_e('Tip:', 'archiviomd'); ?></strong> <?php esc_html_e('Leave the content empty and save to delete the file.', 'archiviomd'); ?></p>
             </div>
         </div>
         
         <div class="mdsm-modal-footer">
-            <button type="button" class="button mdsm-modal-close"><?php _e('Cancel', 'meta-doc-seo'); ?></button>
+            <button type="button" class="button mdsm-modal-close"><?php esc_html_e('Cancel', 'archiviomd'); ?></button>
             <button type="button" id="mdsm-save-file" class="button button-primary">
                 <span class="dashicons dashicons-saved"></span>
-                <?php _e('Save File', 'meta-doc-seo'); ?>
+                <?php esc_html_e('Save File', 'archiviomd'); ?>
             </button>
         </div>
     </div>
@@ -509,7 +515,7 @@ $seo_total = count($seo_files);
 <div id="mdsm-changelog-modal" class="mdsm-modal">
     <div class="mdsm-modal-content">
         <div class="mdsm-modal-header">
-            <h2><?php _e('Document Change Log', 'meta-doc-seo'); ?></h2>
+            <h2><?php esc_html_e('Document Change Log', 'archiviomd'); ?></h2>
             <button class="mdsm-modal-close">
                 <span class="dashicons dashicons-no"></span>
             </button>
@@ -526,7 +532,7 @@ $seo_total = count($seo_files);
         </div>
         
         <div class="mdsm-modal-footer">
-            <button type="button" class="button mdsm-modal-close"><?php _e('Close', 'meta-doc-seo'); ?></button>
+            <button type="button" class="button mdsm-modal-close"><?php esc_html_e('Close', 'archiviomd'); ?></button>
         </div>
     </div>
 </div>

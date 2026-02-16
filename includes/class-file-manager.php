@@ -153,6 +153,14 @@ class MDSM_File_Manager {
         if ($file_type === 'meta') {
             $metadata_manager = new MDSM_Document_Metadata();
             $metadata = $metadata_manager->update_metadata($file_name, $content);
+            
+            // Check if HMAC was unavailable
+            if (is_array($metadata) && isset($metadata['error']) && $metadata['error'] === 'hmac_unavailable') {
+                return array(
+                    'success' => false,
+                    'message' => $metadata['message']
+                );
+            }
         }
         
         return array(

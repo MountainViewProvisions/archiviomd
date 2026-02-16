@@ -56,9 +56,9 @@ class MDSM_Compliance_Tools {
      */
     public function add_tools_menu() {
         add_submenu_page(
-            'tools.php',
+            'archiviomd',
             __('ArchivioMD Compliance', 'archivio-md'),
-            __('ArchivioMD', 'archivio-md'),
+            __('Metadata Engine', 'archivio-md'),
             'manage_options',
             'archivio-md-compliance',
             array($this, 'render_tools_page')
@@ -799,9 +799,11 @@ class MDSM_Compliance_Tools {
                     continue;
                 }
                 
-                // Compute current checksum
+                // Compute current checksum using the algorithm recorded in stored metadata
                 $content = $file_manager->read_file('meta', $file_name);
-                $current_checksum = hash('sha256', $content);
+                $stored_unpacked = MDSM_Hash_Helper::unpack($metadata['checksum']);
+                $computed = MDSM_Hash_Helper::compute($content, $stored_unpacked['algorithm']);
+                $current_checksum = MDSM_Hash_Helper::pack($computed['hash'], $computed['algorithm']);
                 
                 if ($current_checksum === $metadata['checksum']) {
                     $verified++;
@@ -841,7 +843,9 @@ class MDSM_Compliance_Tools {
             }
             
             $content = $file_manager->read_file('meta', $file_name);
-            $current_checksum = hash('sha256', $content);
+            $stored_unpacked = MDSM_Hash_Helper::unpack($metadata['checksum']);
+            $computed = MDSM_Hash_Helper::compute($content, $stored_unpacked['algorithm']);
+            $current_checksum = MDSM_Hash_Helper::pack($computed['hash'], $computed['algorithm']);
             
             if ($current_checksum === $metadata['checksum']) {
                 $verified++;

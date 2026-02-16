@@ -60,13 +60,42 @@ function archiviomd_uninstall_cleanup() {
         'mdsm_backup_notice_dismissed',
         'mdsm_permalink_notice_dismissed',
         'mdsm_uninstall_cleanup_enabled', // Delete the opt-in flag itself
+        'archivio_post_auto_generate',
+        'archivio_post_show_badge',
+        'archivio_hash_algorithm',
+        'archivio_hmac_mode',
     );
     
     foreach ($plugin_options as $option_name) {
         delete_option($option_name);
     }
     
-    // 3. Delete public index page if it was created by the plugin
+    // 3. Delete Archivio Post metadata and audit table
+    // Delete all post meta created by Archivio Post
+    $wpdb->query(
+        "DELETE FROM {$wpdb->postmeta} 
+         WHERE meta_key IN ('_archivio_post_hash', '_archivio_post_algorithm', '_archivio_post_author_id', '_archivio_post_timestamp', '_archivio_post_badge_visible', '_archivio_post_mode')"
+    );
+    
+    // Drop the audit log table
+    $audit_table = $wpdb->prefix . 'archivio_post_audit';
+    $wpdb->query( $wpdb->prepare( "DROP TABLE IF EXISTS %i", $audit_table ) );
+    
+    // 5. Delete External Anchoring settings and queue
+    delete_option('mdsm_anchor_settings');
+    delete_option('mdsm_anchor_queue');
+    
+    // Drop anchor log table
+    MDSM_Anchor_Log::drop_table();
+    
+    // Unschedule anchoring cron
+    $cron_hook = 'mdsm_process_anchor_queue';
+    $timestamp  = wp_next_scheduled($cron_hook);
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, $cron_hook);
+    }
+    
+    // 4. Delete public index page if it was created by the plugin
     $page_id = get_option('mdsm_public_index_page_id');
     if ($page_id) {
         // Force delete (bypass trash)

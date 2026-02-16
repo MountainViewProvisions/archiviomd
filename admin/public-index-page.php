@@ -47,7 +47,7 @@ if (isset($_POST['mdsm_save_public_index']) && check_admin_referer('mdsm_save_pu
         add_settings_error(
             'mdsm_public_index',
             'mdsm_public_index_saved',
-            __('Public Index settings saved successfully!', 'meta-doc-seo'),
+            __('Public Index settings saved successfully!', 'archiviomd'),
             'success'
         );
     }
@@ -79,29 +79,29 @@ if ($index_enabled && !empty($index_slug)) {
     <?php settings_errors('mdsm_public_index'); ?>
     
     <div class="mdsm-section-header">
-        <h2><?php _e('Public Document Index', 'meta-doc-seo'); ?></h2>
-        <p><?php _e('Create a public index of selected documentation files. Choose between a pre-generated page or use a shortcode.', 'meta-doc-seo'); ?></p>
+        <h2><?php esc_html_e('Public Document Index', 'archiviomd'); ?></h2>
+        <p><?php esc_html_e('Create a public index of selected documentation files. Choose between a pre-generated page or use a shortcode.', 'archiviomd'); ?></p>
     </div>
 
     <!-- Output Mode Selection -->
     <div class="mdsm-public-index-panel">
     <div class="mdsm-index-mode-section">
-        <h3><?php _e('Output Mode', 'meta-doc-seo'); ?></h3>
+        <h3><?php esc_html_e('Output Mode', 'archiviomd'); ?></h3>
         
         <div class="mdsm-option-group">
             <label class="mdsm-radio-label">
                 <input type="radio" name="index_output_mode" value="page" <?php checked($index_enabled, true); ?>>
                 <div class="mdsm-radio-content">
-                    <strong><?php _e('Display on WordPress Page', 'meta-doc-seo'); ?></strong>
-                    <p><?php _e('Select an existing WordPress page to display the document index. The shortcode will be automatically used.', 'meta-doc-seo'); ?></p>
+                    <strong><?php esc_html_e('Display on WordPress Page', 'archiviomd'); ?></strong>
+                    <p><?php esc_html_e('Select an existing WordPress page to display the document index. The shortcode will be automatically used.', 'archiviomd'); ?></p>
                 </div>
             </label>
 
             <label class="mdsm-radio-label">
                 <input type="radio" name="index_output_mode" value="shortcode" <?php checked($index_enabled, false); ?>>
                 <div class="mdsm-radio-content">
-                    <strong><?php _e('Manual Shortcode Placement', 'meta-doc-seo'); ?></strong>
-                    <p><?php _e('Use the shortcode [archiviomd_documents] anywhere you want - in posts, pages, or widgets.', 'meta-doc-seo'); ?></p>
+                    <strong><?php esc_html_e('Manual Shortcode Placement', 'archiviomd'); ?></strong>
+                    <p><?php esc_html_e('Use the shortcode [archiviomd_documents] anywhere you want - in posts, pages, or widgets.', 'archiviomd'); ?></p>
                 </div>
             </label>
         </div>
@@ -109,11 +109,11 @@ if ($index_enabled && !empty($index_slug)) {
 
     <!-- Page Configuration (only shown when page mode is selected) -->
     <div class="mdsm-page-config-section" id="mdsm-page-config">
-        <h3><?php _e('Page Configuration', 'meta-doc-seo'); ?></h3>
+        <h3><?php esc_html_e('Page Configuration', 'archiviomd'); ?></h3>
         
         <div class="mdsm-form-group">
             <label for="index_page_id" class="mdsm-form-label">
-                <?php _e('Select Page', 'meta-doc-seo'); ?>
+                <?php esc_html_e('Select Page', 'archiviomd'); ?>
             </label>
             <?php
             $selected_page_id = get_option('mdsm_public_index_page_id', 0);
@@ -124,7 +124,7 @@ if ($index_enabled && !empty($index_slug)) {
             ));
             ?>
             <select id="index_page_id" name="index_page_id" class="mdsm-select-input">
-                <option value=""><?php _e('-- Select a Page --', 'meta-doc-seo'); ?></option>
+                <option value=""><?php esc_html_e('-- Select a Page --', 'archiviomd'); ?></option>
                 <?php foreach ($pages as $page) : ?>
                     <option value="<?php echo esc_attr($page->ID); ?>" <?php selected($selected_page_id, $page->ID); ?>>
                         <?php echo esc_html($page->post_title); ?>
@@ -132,7 +132,7 @@ if ($index_enabled && !empty($index_slug)) {
                 <?php endforeach; ?>
             </select>
             <p class="mdsm-form-help">
-                <?php _e('Select which published page should display the Public Document Index. Add the [archiviomd_documents] shortcode to the selected page.', 'meta-doc-seo'); ?>
+                <?php esc_html_e('Select which published page should display the Public Document Index. Add the [archiviomd_documents] shortcode to the selected page.', 'archiviomd'); ?>
             </p>
         </div>
 
@@ -140,7 +140,7 @@ if ($index_enabled && !empty($index_slug)) {
             <div class="mdsm-index-preview">
                 <a href="<?php echo esc_url(get_permalink($selected_page_id)); ?>" target="_blank" class="mdsm-preview-link">
                     <span class="dashicons dashicons-external"></span>
-                    <?php _e('View Selected Page', 'meta-doc-seo'); ?>
+                    <?php esc_html_e('View Selected Page', 'archiviomd'); ?>
                 </a>
             </div>
         <?php endif; ?>
@@ -148,24 +148,24 @@ if ($index_enabled && !empty($index_slug)) {
 
     <!-- Shortcode Info (only shown when shortcode mode is selected) -->
     <div class="mdsm-shortcode-info-section" id="mdsm-shortcode-info" style="display: none;">
-        <h3><?php _e('Shortcode Usage', 'meta-doc-seo'); ?></h3>
+        <h3><?php esc_html_e('Shortcode Usage', 'archiviomd'); ?></h3>
         <div class="mdsm-shortcode-box">
             <code class="mdsm-shortcode-code">[archiviomd_documents]</code>
             <button type="button" class="mdsm-copy-shortcode" data-shortcode="[archiviomd_documents]">
                 <span class="dashicons dashicons-admin-page"></span>
-                <?php _e('Copy', 'meta-doc-seo'); ?>
+                <?php esc_html_e('Copy', 'archiviomd'); ?>
             </button>
         </div>
         <p class="mdsm-form-help">
-            <?php _e('Add this shortcode to any post or page to display the document index.', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Add this shortcode to any post or page to display the document index.', 'archiviomd'); ?>
         </p>
     </div>
 
     <!-- Document Selection -->
     <div class="mdsm-document-selection-section">
-        <h3><?php _e('Document Visibility', 'meta-doc-seo'); ?></h3>
+        <h3><?php esc_html_e('Document Visibility', 'archiviomd'); ?></h3>
         <p class="mdsm-section-description">
-            <?php _e('Select which documents should appear in the public index. Only existing documents can be published.', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Select which documents should appear in the public index. Only existing documents can be published.', 'archiviomd'); ?>
         </p>
 
         <?php foreach ($meta_files as $category => $files) : ?>
@@ -201,9 +201,9 @@ if ($index_enabled && !empty($index_slug)) {
                                     <span class="mdsm-file-checkbox-label">
                                         <?php echo esc_html($file_name); ?>
                                         <?php if ($disabled) : ?>
-                                            <span class="mdsm-file-status-badge mdsm-status-missing"><?php _e('Not Created', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-file-status-badge mdsm-status-missing"><?php esc_html_e('Not Created', 'archiviomd'); ?></span>
                                         <?php else : ?>
-                                            <span class="mdsm-file-status-badge mdsm-status-available"><?php _e('Available', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-file-status-badge mdsm-status-available"><?php esc_html_e('Available', 'archiviomd'); ?></span>
                                         <?php endif; ?>
                                     </span>
                                 </label>
@@ -217,7 +217,7 @@ if ($index_enabled && !empty($index_slug)) {
                                     class="mdsm-description-input"
                                     <?php disabled($disabled, true); ?>
                                 >
-                                <small class="mdsm-input-hint"><?php _e('Optional: Custom description for public display', 'meta-doc-seo'); ?></small>
+                                <small class="mdsm-input-hint"><?php esc_html_e('Optional: Custom description for public display', 'archiviomd'); ?></small>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -235,7 +235,7 @@ if ($index_enabled && !empty($index_slug)) {
                 <div class="mdsm-category-header">
                     <h4 class="mdsm-index-category-title">
                         <span class="dashicons dashicons-edit"></span>
-                        <?php _e('Custom Markdown', 'meta-doc-seo'); ?>
+                        <?php esc_html_e('Custom Markdown', 'archiviomd'); ?>
                     </h4>
                     <button class="mdsm-collapse-toggle" aria-expanded="false">
                         <span class="dashicons dashicons-arrow-down-alt2"></span>
@@ -263,9 +263,9 @@ if ($index_enabled && !empty($index_slug)) {
                                     <span class="mdsm-file-checkbox-label">
                                         <?php echo esc_html($file_name); ?>
                                         <?php if ($disabled) : ?>
-                                            <span class="mdsm-file-status-badge mdsm-status-missing"><?php _e('Not Created', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-file-status-badge mdsm-status-missing"><?php esc_html_e('Not Created', 'archiviomd'); ?></span>
                                         <?php else : ?>
-                                            <span class="mdsm-file-status-badge mdsm-status-available"><?php _e('Available', 'meta-doc-seo'); ?></span>
+                                            <span class="mdsm-file-status-badge mdsm-status-available"><?php esc_html_e('Available', 'archiviomd'); ?></span>
                                         <?php endif; ?>
                                     </span>
                                 </label>
@@ -279,7 +279,7 @@ if ($index_enabled && !empty($index_slug)) {
                                     class="mdsm-description-input"
                                     <?php disabled($disabled, true); ?>
                                 >
-                                <small class="mdsm-input-hint"><?php _e('Optional: Custom description for public display', 'meta-doc-seo'); ?></small>
+                                <small class="mdsm-input-hint"><?php esc_html_e('Optional: Custom description for public display', 'archiviomd'); ?></small>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -293,7 +293,7 @@ if ($index_enabled && !empty($index_slug)) {
     <div class="mdsm-button-group">
         <button type="submit" name="mdsm_save_public_index" id="save-public-index" class="button button-primary button-hero">
             <span class="dashicons dashicons-saved"></span>
-            <?php _e('Save Public Index Settings', 'meta-doc-seo'); ?>
+            <?php esc_html_e('Save Public Index Settings', 'archiviomd'); ?>
         </button>
     </div>
 </div>

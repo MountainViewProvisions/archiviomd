@@ -84,26 +84,28 @@
    =========================== */
 .mdsm-tabs {
     background: #fff;
-    padding: 0 40px;
+    padding: 0 20px;
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 4px;
     border-bottom: 2px solid #e0e0e0;
 }
 
 .mdsm-tab-button {
     background: transparent;
     border: none;
-    padding: 18px 25px;
-    font-size: 15px;
+    padding: 14px 16px;
+    font-size: 13.5px;
     font-weight: 600;
     color: #666;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     position: relative;
     transition: all 0.3s ease;
     border-radius: 8px 8px 0 0;
+    white-space: nowrap;
 }
 
 .mdsm-tab-button:hover {
@@ -119,7 +121,7 @@
 .mdsm-tab-button.active::after {
     content: '';
     position: absolute;
-    bottom: -2px;
+    bottom: 0;
     left: 0;
     right: 0;
     height: 3px;
@@ -128,9 +130,9 @@
 }
 
 .mdsm-tab-button .dashicons {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .mdsm-badge {
@@ -874,12 +876,13 @@
     }
     
     .mdsm-tabs {
-        flex-direction: column;
-        gap: 5px;
+        padding: 0 12px;
+        gap: 2px;
     }
-    
+
     .mdsm-tab-button {
-        justify-content: center;
+        padding: 10px 12px;
+        font-size: 12.5px;
     }
     
     .mdsm-modal-content {

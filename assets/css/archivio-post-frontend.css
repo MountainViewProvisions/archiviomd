@@ -1,0 +1,164 @@
+/**
+ * Archivio Post Frontend Styles
+ *
+ * @package ArchivioMD
+ * @since   1.2.0
+ * @updated 1.5.1 – Compact pill badge matching reference design
+ */
+
+/* ── Pill badge ─────────────────────────────────────────────────────────── */
+
+.archivio-post-badge {
+    display:        inline-flex;
+    align-items:    center;
+    gap:            0;
+    padding:        0;
+    border-radius:  999px;
+    border:         1.5px solid transparent;
+    font-family:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size:      13px;
+    font-weight:    600;
+    line-height:    1;
+    vertical-align: middle;
+    white-space:    nowrap;
+    overflow:       hidden;
+    margin-left:    10px;
+    position:       relative;
+    top:            -1px;
+    transition:     box-shadow 0.2s ease;
+}
+
+/* ── Colour variants ─────────────────────────────────────────────────────── */
+
+.archivio-post-badge.verified {
+    background:   #e6f7ee;
+    border-color: #2da55e;
+    color:        #1a7a42;
+}
+
+.archivio-post-badge.unverified {
+    background:   #fff0f0;
+    border-color: #d73a49;
+    color:        #a8222f;
+}
+
+.archivio-post-badge.not-signed {
+    background:   #f1f3f4;
+    border-color: #9aa0a6;
+    color:        #5f6368;
+}
+
+/* ── Icon ────────────────────────────────────────────────────────────────── */
+
+.archivio-post-badge .apb-icon {
+    display:     inline-flex;
+    align-items: center;
+    padding:     6px 0 6px 10px;
+    flex-shrink: 0;
+}
+
+.archivio-post-badge .apb-svg {
+    width:       14px;
+    height:      14px;
+    flex-shrink: 0;
+}
+
+/* ── Label ───────────────────────────────────────────────────────────────── */
+
+.archivio-post-badge .apb-text {
+    padding:        6px 8px 6px 5px;
+    letter-spacing: 0.01em;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+
+.archivio-post-badge .apb-divider {
+    display:     block;
+    width:       1.5px;
+    align-self:  stretch;
+    flex-shrink: 0;
+    background:  currentColor;
+    opacity:     0.25;
+}
+
+/* ── Download button ─────────────────────────────────────────────────────── */
+
+.archivio-post-badge .apb-download {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    padding:         6px 9px;
+    background:      transparent;
+    border:          none;
+    cursor:          pointer;
+    color:           inherit;
+    border-radius:   0;
+    transition:      background-color 0.15s ease;
+    flex-shrink:     0;
+    line-height:     1;
+}
+
+.archivio-post-badge .apb-download:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.archivio-post-badge .apb-download:active {
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.archivio-post-badge .apb-download:disabled {
+    opacity: 0.5;
+    cursor:  not-allowed;
+}
+
+.archivio-post-badge .apb-dl-svg {
+    width:   15px;
+    height:  15px;
+    display: block;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+
+@keyframes archivio-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.archivio-post-badge .apb-download .spin,
+.archivio-post-download .spin {
+    animation: archivio-spin 0.7s linear infinite;
+    display:   inline-block;
+}
+
+/* Standalone class kept for JS selector compatibility */
+.archivio-post-download {
+    cursor: pointer;
+}
+
+/* ── Pulse on verified ───────────────────────────────────────────────────── */
+
+@keyframes archivio-pulse-verified {
+    0%   { box-shadow: 0 0 0 0   rgba(45, 165, 94, 0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(45, 165, 94, 0); }
+    100% { box-shadow: 0 0 0 0   rgba(45, 165, 94, 0); }
+}
+
+.archivio-post-badge.verified.pulse {
+    animation: archivio-pulse-verified 2s ease-in-out;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .archivio-post-badge {
+        font-size:   12px;
+        margin-left: 7px;
+    }
+
+    .archivio-post-badge .apb-icon   { padding: 5px 0 5px 8px; }
+    .archivio-post-badge .apb-text   { padding: 5px 7px 5px 4px; }
+    .archivio-post-badge .apb-download { padding: 5px 7px; }
+
+    .archivio-post-badge .apb-svg,
+    .archivio-post-badge .apb-dl-svg { width: 13px; height: 13px; }
+}

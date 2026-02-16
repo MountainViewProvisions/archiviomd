@@ -22,18 +22,26 @@ class MDSM_Document_Metadata {
      * Get metadata for a document
      * 
      * @param string $file_name The filename (e.g., 'security.txt.md')
-     * @return array Metadata array with uuid, checksum, modified_at, changelog
+     * @return array Metadata array with uuid, checksum, algorithm, modified_at, changelog
      */
     public function get_metadata($file_name) {
         $option_name = $this->get_option_name($file_name);
         $metadata = get_option($option_name, array());
         
-        // Ensure proper structure
+        // Ensure proper structure (backward-compatible defaults)
         if (!isset($metadata['uuid'])) {
             $metadata['uuid'] = null;
         }
         if (!isset($metadata['checksum'])) {
             $metadata['checksum'] = null;
+        }
+        // Legacy rows that predate 1.3.0 have no 'algorithm' field; default sha256.
+        if (!isset($metadata['algorithm'])) {
+            $metadata['algorithm'] = 'sha256';
+        }
+        // Legacy rows that predate 1.4.2 have no 'mode' field; default standard.
+        if (!isset($metadata['mode'])) {
+            $metadata['mode'] = 'standard';
         }
         if (!isset($metadata['modified_at'])) {
             $metadata['modified_at'] = null;
@@ -53,21 +61,39 @@ class MDSM_Document_Metadata {
      * @return array The initialized metadata
      */
     public function initialize_metadata($file_name, $content) {
-        $uuid = $this->generate_uuid_v4();
-        $checksum = $this->compute_checksum($content);
+        $uuid   = $this->generate_uuid_v4();
+        $result = MDSM_Hash_Helper::compute_packed($content);
+        
+        // CRITICAL: Check if HMAC was requested but unavailable
+        if ($result['hmac_unavailable']) {
+            // Don't save - return error to caller
+            return array(
+                'success' => false,
+                'error' => 'hmac_unavailable',
+                'message' => 'HMAC mode is enabled but ARCHIVIOMD_HMAC_KEY constant is not defined in wp-config.php.'
+            );
+        }
+        
+        $checksum  = $result['packed'];   // algo:hex or hmac-algo:hex
+        $algorithm = $result['algorithm'];
+        $mode      = $result['mode'];
         $timestamp = $this->get_utc_timestamp();
-        $user_id = get_current_user_id();
+        $user_id   = get_current_user_id();
         
         $metadata = array(
-            'uuid' => $uuid,
-            'checksum' => $checksum,
+            'uuid'      => $uuid,
+            'checksum'  => $checksum,
+            'algorithm' => $algorithm,
+            'mode'      => $mode,
             'modified_at' => $timestamp,
             'changelog' => array(
                 array(
                     'timestamp' => $timestamp,
-                    'user_id' => $user_id,
-                    'action' => 'created',
-                    'checksum' => $checksum
+                    'user_id'   => $user_id,
+                    'action'    => 'created',
+                    'checksum'  => $checksum,
+                    'algorithm' => $algorithm,
+                    'mode'      => $mode,
                 )
             )
         );
@@ -92,21 +118,39 @@ class MDSM_Document_Metadata {
             return $this->initialize_metadata($file_name, $content);
         }
         
-        // Compute new checksum
-        $checksum = $this->compute_checksum($content);
+        // Compute new checksum with the currently-selected algorithm
+        $result = MDSM_Hash_Helper::compute_packed($content);
+        
+        // CRITICAL: Check if HMAC was requested but unavailable
+        if ($result['hmac_unavailable']) {
+            // Don't save - return error to caller
+            return array(
+                'success' => false,
+                'error' => 'hmac_unavailable',
+                'message' => 'HMAC mode is enabled but ARCHIVIOMD_HMAC_KEY constant is not defined in wp-config.php.'
+            );
+        }
+        
+        $checksum  = $result['packed'];
+        $algorithm = $result['algorithm'];
+        $mode      = $result['mode'];
         $timestamp = $this->get_utc_timestamp();
-        $user_id = get_current_user_id();
+        $user_id   = get_current_user_id();
         
         // Update metadata
-        $metadata['checksum'] = $checksum;
+        $metadata['checksum']  = $checksum;
+        $metadata['algorithm'] = $algorithm;
+        $metadata['mode']      = $mode;
         $metadata['modified_at'] = $timestamp;
         
-        // Append to changelog (append-only)
+        // Append to changelog (append-only; each entry records its own algorithm and mode)
         $metadata['changelog'][] = array(
             'timestamp' => $timestamp,
-            'user_id' => $user_id,
-            'action' => 'updated',
-            'checksum' => $checksum
+            'user_id'   => $user_id,
+            'action'    => 'updated',
+            'checksum'  => $checksum,
+            'algorithm' => $algorithm,
+            'mode'      => $mode,
         );
         
         $this->save_metadata($file_name, $metadata);
@@ -190,16 +234,6 @@ class MDSM_Document_Metadata {
         
         // Format as UUID string
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
-    
-    /**
-     * Compute SHA-256 checksum of content
-     * 
-     * @param string $content The content to checksum
-     * @return string The SHA-256 hash in hexadecimal
-     */
-    private function compute_checksum($content) {
-        return hash('sha256', $content);
     }
     
     /**

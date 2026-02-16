@@ -2,12 +2,12 @@
 /**
  * Plugin Name: ArchivioMD
  * Plugin URI: https://mountainviewprovisions.com/ArchivioMD
- * Description: Professional management of meta-documentation files, SEO files (robots.txt, llms.txt), and sitemaps with a beautiful admin interface. Now with HTML rendering support for Markdown files!
- * Version: 1.1
+ * Description: Manage meta-docs, SEO files, and sitemaps with audit tools and HTML-rendered Markdown support.
+ * Version: 1.5.9
  * Author: Mountain View Provisions LLC
- * Author URI: https://mountainviewprovisions.com/ArchivioMD
+ * Author URI: https://mountainviewprovisions.com/
  * Requires at least: 5.0
- * Tested up to: 6.7
+ * Tested up to: 6.9
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: archivio-md
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MDSM_VERSION', '1.1.0');
+define('MDSM_VERSION', '1.5.9');
 define('MDSM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MDSM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MDSM_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -64,6 +64,12 @@ class Meta_Documentation_SEO_Manager {
         // Initialize compliance tools (singleton)
         MDSM_Compliance_Tools::get_instance();
         
+        // Initialize Archivio Post (singleton)
+        MDSM_Archivio_Post::get_instance();
+        
+        // Initialize External Anchoring (singleton)
+        MDSM_External_Anchoring::get_instance();
+        
         // Initialize admin
         if (is_admin()) {
             add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -105,12 +111,17 @@ class Meta_Documentation_SEO_Manager {
      */
     private function load_dependencies() {
         require_once MDSM_PLUGIN_DIR . 'includes/class-file-manager.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-blake3.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-hash-helper.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-document-metadata.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-seo-file-metadata.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-sitemap-generator.php';
         require_once MDSM_PLUGIN_DIR . 'includes/file-definitions.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-html-renderer.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-public-index.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-compliance-tools.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-archivio-post.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-external-anchoring.php';
     }
     
     /**
@@ -118,21 +129,25 @@ class Meta_Documentation_SEO_Manager {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('Meta Documentation & SEO', 'meta-doc-seo'),
-            __('Meta Docs & SEO', 'meta-doc-seo'),
+            __('Meta Documentation & SEO', 'archiviomd'),
+            __('Meta Docs & SEO', 'archiviomd'),
             'manage_options',
-            'meta-doc-seo',
+            'archiviomd',
             array($this, 'render_admin_page'),
             'dashicons-media-document',
             30
         );
+
+        // WordPress auto-generates a duplicate first submenu entry matching the
+        // parent slug. Remove it so only our real submenu items appear.
+        remove_submenu_page( 'archiviomd', 'archiviomd' );
     }
     
     /**
      * Enqueue admin assets
      */
     public function enqueue_admin_assets($hook) {
-        if ('toplevel_page_meta-doc-seo' !== $hook) {
+        if ( 'toplevel_page_archiviomd' !== $hook ) {
             return;
         }
         
@@ -156,18 +171,18 @@ class Meta_Documentation_SEO_Manager {
             'nonce' => wp_create_nonce('mdsm_nonce'),
             'siteUrl' => get_site_url(),
             'strings' => array(
-                'saving' => __('Saving...', 'meta-doc-seo'),
-                'saved' => __('Saved successfully!', 'meta-doc-seo'),
-                'error' => __('Error occurred. Please try again.', 'meta-doc-seo'),
-                'confirmDelete' => __('This file will be deleted because it is empty. Continue?', 'meta-doc-seo'),
-                'generating' => __('Generating sitemap...', 'meta-doc-seo'),
-                'generated' => __('Sitemap generated successfully!', 'meta-doc-seo'),
-                'copied' => __('Link copied to clipboard!', 'meta-doc-seo'),
-                'generatingHtml' => __('Generating HTML...', 'meta-doc-seo'),
-                'htmlGenerated' => __('HTML file generated successfully!', 'meta-doc-seo'),
-                'deletingHtml' => __('Deleting HTML...', 'meta-doc-seo'),
-                'htmlDeleted' => __('HTML file deleted successfully!', 'meta-doc-seo'),
-                'confirmDeleteHtml' => __('Do you want to delete the associated HTML file?', 'meta-doc-seo'),
+                'saving' => __('Saving...', 'archiviomd'),
+                'saved' => __('Saved successfully!', 'archiviomd'),
+                'error' => __('Error occurred. Please try again.', 'archiviomd'),
+                'confirmDelete' => __('This file will be deleted because it is empty. Continue?', 'archiviomd'),
+                'generating' => __('Generating sitemap...', 'archiviomd'),
+                'generated' => __('Sitemap generated successfully!', 'archiviomd'),
+                'copied' => __('Link copied to clipboard!', 'archiviomd'),
+                'generatingHtml' => __('Generating HTML...', 'archiviomd'),
+                'htmlGenerated' => __('HTML file generated successfully!', 'archiviomd'),
+                'deletingHtml' => __('Deleting HTML...', 'archiviomd'),
+                'htmlDeleted' => __('HTML file deleted successfully!', 'archiviomd'),
+                'confirmDeleteHtml' => __('Do you want to delete the associated HTML file?', 'archiviomd'),
             )
         ));
     }
@@ -189,7 +204,7 @@ class Meta_Documentation_SEO_Manager {
     public function show_permalink_notice() {
         // Only show on our plugin page
         $screen = get_current_screen();
-        if (!$screen || $screen->id !== 'toplevel_page_meta-doc-seo') {
+        if (!$screen || $screen->id !== 'toplevel_page_archiviomd') {
             return;
         }
         
@@ -246,6 +261,19 @@ class Meta_Documentation_SEO_Manager {
         $file_manager = new MDSM_File_Manager();
         $result = $file_manager->save_file($file_type, $file_name, $content);
         
+        // Queue external anchor for native Markdown documents after successful save.
+        if ($result['success'] && $file_type === 'meta' && !empty($result['metadata']) && !empty(trim($content))) {
+            $metadata    = $result['metadata'];
+            $hash_result = MDSM_Hash_Helper::compute_packed($content);
+            if (!$hash_result['hmac_unavailable']) {
+                MDSM_External_Anchoring::get_instance()->queue_document_anchor(
+                    $file_name,
+                    $metadata,
+                    $hash_result
+                );
+            }
+        }
+        
         // Auto-generate HTML for meta files if content is not empty
         if ($result['success'] && $file_type === 'meta' && !empty(trim($content))) {
             $html_renderer = new MDSM_HTML_Renderer();
@@ -254,6 +282,18 @@ class Meta_Documentation_SEO_Manager {
             if ($html_result['success']) {
                 $result['html_generated'] = true;
                 $result['html_url'] = $html_result['html_url'];
+                
+                // Queue external anchor for the generated HTML output.
+                $html_path = $html_renderer->get_html_file_path($file_type, $html_result['html_filename']);
+                if ($html_path && file_exists($html_path)) {
+                    $html_content = file_get_contents($html_path);
+                    if ($html_content !== false) {
+                        MDSM_External_Anchoring::get_instance()->queue_html_anchor(
+                            $html_result['html_filename'],
+                            $html_content
+                        );
+                    }
+                }
             }
         }
         
@@ -405,6 +445,20 @@ class Meta_Documentation_SEO_Manager {
         
         $html_renderer = new MDSM_HTML_Renderer();
         $result = $html_renderer->generate_html_file($file_type, $file_name);
+        
+        // Queue external anchor for the freshly generated HTML file.
+        if ($result['success'] && !empty($result['html_filename'])) {
+            $html_path = $html_renderer->get_html_file_path($file_type, $result['html_filename']);
+            if ($html_path && file_exists($html_path)) {
+                $html_content = file_get_contents($html_path);
+                if ($html_content !== false) {
+                    MDSM_External_Anchoring::get_instance()->queue_html_anchor(
+                        $result['html_filename'],
+                        $html_content
+                    );
+                }
+            }
+        }
         
         if ($result['success']) {
             wp_send_json_success($result);
@@ -817,6 +871,34 @@ class Meta_Documentation_SEO_Manager {
         add_option('mdsm_auto_update_sitemap', false);
         add_option('mdsm_sitemap_type', 'small');
         
+        // Set default Archivio Post options - use update_option to ensure they're set correctly
+        // even if they existed before with wrong values
+        // Default to false (unchecked) - user must explicitly enable
+        if (get_option('archivio_post_auto_generate') === false) {
+            update_option('archivio_post_auto_generate', false);
+        }
+        if (get_option('archivio_post_show_badge') === false) {
+            update_option('archivio_post_show_badge', false);
+        }
+        if (get_option('archivio_post_show_badge_posts') === false) {
+            update_option('archivio_post_show_badge_posts', false);
+        }
+        if (get_option('archivio_post_show_badge_pages') === false) {
+            update_option('archivio_post_show_badge_pages', false);
+        }
+        if (get_option('archivio_hash_algorithm') === false) {
+            update_option('archivio_hash_algorithm', 'sha256');
+        }
+        
+        // Create Archivio Post audit table
+        MDSM_Archivio_Post::create_audit_table();
+        
+        // Create External Anchoring log table
+        MDSM_Anchor_Log::create_table();
+        
+        // Schedule anchoring cron
+        MDSM_External_Anchoring::activate_cron();
+        
         // Add rewrite rules and flush
         $this->add_rewrite_rules();
         flush_rewrite_rules();
@@ -828,6 +910,9 @@ class Meta_Documentation_SEO_Manager {
     public function deactivate() {
         // Flush rewrite rules to remove our custom rules
         flush_rewrite_rules();
+        
+        // Unschedule anchoring cron
+        MDSM_External_Anchoring::deactivate_cron();
     }
 }
 

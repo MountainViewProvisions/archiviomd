@@ -288,9 +288,15 @@ class MDSM_HTML_Renderer {
         }
         
         if (!empty($metadata['checksum'])) {
+            // Unpack packed checksum to get the actual hash, algorithm, and mode
+            $unpacked   = MDSM_Hash_Helper::unpack($metadata['checksum']);
+            $algo_label = MDSM_Hash_Helper::algorithm_label($unpacked['algorithm']);
+            $mode_label = ($unpacked['mode'] === 'hmac') ? 'HMAC-' : '';
+            $full_label = $mode_label . $algo_label;
+            
             $html .= '<div class="mdsm-metadata-item">';
-            $html .= '<span class="mdsm-metadata-label">SHA-256:</span> ';
-            $html .= '<span class="mdsm-metadata-value mdsm-checksum">' . esc_html($metadata['checksum']) . '</span>';
+            $html .= '<span class="mdsm-metadata-label">' . esc_html($full_label) . ':</span> ';
+            $html .= '<span class="mdsm-metadata-value mdsm-checksum">' . esc_html($unpacked['hash']) . '</span>';
             $html .= '</div>';
         }
         
