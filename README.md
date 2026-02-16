@@ -46,6 +46,157 @@ The plugin includes a dedicated public index feature that allows you to selectiv
 For each included document, you can customize the public-facing description independently from the internal description, allowing you to maintain different messaging for internal and external audiences. The index automatically adapts to your site's theme styling while maintaining a clean, professional appearance.
 
 ---
+### 🔒 Cryptographic Post & Page Verification
+
+#### Verification Badge System
+- **Visual badges** on posts and pages showing integrity status
+- **Three states**: ✓ Verified (green), ✗ Unverified (red), − Not Signed (gray)
+- **Automatic display** below titles or content
+- **Manual placement** via `[hash_verify]` shortcode
+- **Downloadable verification files** for offline confirmation
+
+#### Supported Hash Algorithms
+
+**Standard Algorithms**:
+- SHA-256 (default)
+- SHA-512
+- SHA3-256
+- SHA3-512
+- BLAKE2b
+
+**Experimental Algorithms**:
+- BLAKE3 (requires PHP extension)
+- SHAKE128-256
+- SHAKE256-512
+
+  ## Hash Algorithm Comparison
+
+| Algorithm | Speed | Output Size | Best For |
+|-----------|-------|-------------|----------|
+| SHA-256 | Fast | 256 bits | General use, maximum compatibility |
+| SHA-512 | Fast | 512 bits | High security requirements |
+| SHA3-256 | Medium | 256 bits | NIST standard, modern security |
+| SHA3-512 | Medium | 512 bits | Maximum security |
+| BLAKE2b | Very Fast | 512 bits | Performance-critical applications |
+| BLAKE3 | Fastest | 256 bits | Experimental, Avaliable with provided extention |
+
+
+
+All algorithms supported in both:
+- Post/page hash generation
+- Markdown file hash verification
+- HTML rendering hash preservation
+
+### HMAC Mode
+
+1. Add `ARCHIVIOMD_HMAC_KEY` to wp-config.php
+2. Enable in **Cryptographic Verification** settings
+3. All new hashes use HMAC authentication
+
+Add authentication to content verification:
+
+```php
+// Add to wp-config.php
+define('ARCHIVIOMD_HMAC_KEY', 'your-secret-key');
+```
+
+HMAC mode provides:
+- **Content integrity**: Proves content hasn't changed
+- **Authenticity**: Proves hash was created by key holder
+- **Tamper detection**: Any modification invalidates the hash
+- **Key-based verification**: Offline verification requires secret key
+
+Enable HMAC in **Cryptographic Verification** → **Settings** → **Enable HMAC Mode**
+
+###  External Anchoring (Remote Distribution Chain)
+
+Distribute cryptographic integrity records to Git repositories for tamper-evident audit trails.
+
+#### Supported Providers
+- **GitHub** (public and private repositories)
+- **GitLab** (public and private repositories including self-hosted)
+
+#### How It Works
+
+1. Content is published or updated
+2. Cryptographic hash is generated
+3. JSON anchor record is created with:
+   - Document/Post ID
+   - Hash algorithm and value
+   - HMAC value (if enabled)
+   - Author ID
+   - Timestamp
+   - Plugin version
+4. Record queued for distribution
+5. WP-Cron pushes to GitHub/GitLab every 5 minutes
+6. Git commit provides immutable timestamp
+7. Creates tamper-evident chain of integrity records
+
+#### Anchor Record Format
+
+```json
+{
+  "document_id": "security.txt.md",
+  "post_id": 123,
+  "post_type": "post",
+  "hash_algorithm": "sha256",
+  "hash_value": "a3f5b8c2d9e1f4a7...",
+  "hmac_value": "b7c6d8e2f1a4b7c6..." (if HMAC enabled),
+  "author_id": 1,
+  "timestamp": "2026-02-15T12:05:30Z",
+  "plugin_version": "1.5.9",
+  "integrity_mode": "hmac"
+}
+```
+
+#### Configuration
+
+**GitHub Setup**:
+1. Create Personal Access Token with `repo` scope
+2. Navigate to **External Anchoring** settings
+3. Enter repository: `username/repo`
+4. Enter branch: `main`
+5. Paste token and save
+
+**GitLab Setup**:
+1. Create Personal Access Token with `api` scope
+2. Navigate to **External Anchoring** settings
+3. Enter repository: `username/project`
+4. Enter GitLab URL (default: https://gitlab.com)
+5. Paste token and save
+
+#### Benefits
+
+- **Tamper-evident**: Git commits prove when hashes were created
+- **Distributed verification**: Anyone can verify via Git history
+- **Automatic backups**: Integrity records preserved off-site
+- **Audit compliance**: Immutable chain for regulatory requirements
+- **Public transparency**: Optional public repository for trust
+
+### HMAC Verification
+
+```bash
+# Requires secret key from wp-config.php
+echo -n "canonical_content" | openssl dgst -sha256 -hmac "YOUR_SECRET_KEY"
+```
+
+### Git Chain Verification
+
+```bash
+# Clone anchor repository
+git clone https://github.com/username/anchors.git
+cd anchors
+
+# View commit history
+git log --oneline
+
+# Check specific anchor
+cat document_20260215_120530.json
+
+# Verify timestamp with Git commit
+git log --follow document_20260215_120530.json
+```
+
 
 ### SEO & Crawling Files
 
