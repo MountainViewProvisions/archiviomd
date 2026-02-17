@@ -13,6 +13,30 @@ It is designed for developers, site owners, and teams who want a clean, structur
 [![HMAC](https://img.shields.io/badge/HMAC-supported-667eea)](https://github.com/MountainViewProvisions/archiviomd)
 [![Anchoring](https://img.shields.io/badge/anchoring-GitHub%20%7C%20GitLab-1f2937)](https://github.com/MountainViewProvisions/archiviomd)
 
+---
+
+## Table of Contents
+
+- [Features](#features)
+  - [Centralized Documentation Management](#centralized-documentation-management)
+  - [Custom Markdown Files](#custom-markdown-files)
+  - [HTML Rendering](#html-rendering)
+  - [Public Documentation Index](#public-documentation-index)
+  - [Cryptographic Post & Page Verification](#-cryptographic-post--page-verification)
+  - [External Anchoring](#external-anchoring-remote-distribution-chain)
+  - [SEO & Crawling Files](#seo--crawling-files)
+  - [Sitemap Management](#sitemap-management)
+  - [Professional Admin Interface](#professional-admin-interface)
+- [Philosophy](#philosophy)
+- [Installation](#installation)
+- [Requirements](#requirements)
+- [Security](#security)
+- [File Serving and URL Structure](#file-serving-and-url-structure)
+- [Roadmap](#roadmap)
+- [License](#license)
+- [Author](#author)
+- [Links](#links)
+- [Support](#support)
 
 ---
 
@@ -56,9 +80,11 @@ The plugin includes a dedicated public index feature that allows you to selectiv
 For each included document, you can customize the public-facing description independently from the internal description, allowing you to maintain different messaging for internal and external audiences. The index automatically adapts to your site's theme styling while maintaining a clean, professional appearance.
 
 ---
+
 ### 🔒 Cryptographic Post & Page Verification
 
 #### Verification Badge System
+
 - **Visual badges** on posts and pages showing integrity status
 - **Three states**: ✓ Verified (green), ✗ Unverified (red), − Not Signed (gray)
 - **Automatic display** below titles or content
@@ -67,41 +93,30 @@ For each included document, you can customize the public-facing description inde
 
 #### Supported Hash Algorithms
 
-**Standard Algorithms**:
-- SHA-256 (default)
-- SHA-512
-- SHA3-256
-- SHA3-512
-- BLAKE2b
-
-**Experimental Algorithms**:
-- BLAKE3 (requires PHP extension)
-- SHAKE128-256
-- SHAKE256-512
-
-  ## Hash Algorithm Comparison
+**Standard Algorithms:**
 
 | Algorithm | Speed | Output Size | Best For |
-|-----------|-------|-------------|----------|
+|---|---|---|---|
 | SHA-256 | Fast | 256 bits | General use, maximum compatibility |
 | SHA-512 | Fast | 512 bits | High security requirements |
 | SHA3-256 | Medium | 256 bits | NIST standard, modern security |
 | SHA3-512 | Medium | 512 bits | Maximum security |
 | BLAKE2b | Very Fast | 512 bits | Performance-critical applications |
-| BLAKE3 | Fastest | 256 bits | Experimental, Avaliable with provided extention |
 
+**Experimental Algorithms:**
 
+| Algorithm | Speed | Output Size | Notes |
+|---|---|---|---|
+| BLAKE3 | Fastest | 256 bits | Requires PHP extension |
+| SHAKE128-256 | Medium | 256 bits | XOF variant |
+| SHAKE256-512 | Medium | 512 bits | XOF variant |
 
-All algorithms supported in both:
+All algorithms are supported in:
 - Post/page hash generation
 - Markdown file hash verification
 - HTML rendering hash preservation
 
-### HMAC Mode
-
-1. Add `ARCHIVIOMD_HMAC_KEY` to wp-config.php
-2. Enable in **Cryptographic Verification** settings
-3. All new hashes use HMAC authentication
+#### HMAC Mode
 
 Add authentication to content verification:
 
@@ -110,21 +125,31 @@ Add authentication to content verification:
 define('ARCHIVIOMD_HMAC_KEY', 'your-secret-key');
 ```
 
+Then enable in **Cryptographic Verification → Settings → Enable HMAC Mode**.
+
 HMAC mode provides:
-- **Content integrity**: Proves content hasn't changed
-- **Authenticity**: Proves hash was created by key holder
-- **Tamper detection**: Any modification invalidates the hash
-- **Key-based verification**: Offline verification requires secret key
 
-Enable HMAC in **Cryptographic Verification** → **Settings** → **Enable HMAC Mode**
+- **Content integrity** — proves content hasn't changed
+- **Authenticity** — proves hash was created by the key holder
+- **Tamper detection** — any modification invalidates the hash
+- **Key-based verification** — offline verification requires the secret key
 
-###  External Anchoring (Remote Distribution Chain)
+**Offline HMAC verification:**
+
+```bash
+echo -n "canonical_content" | openssl dgst -sha256 -hmac "YOUR_SECRET_KEY"
+```
+
+---
+
+### External Anchoring (Remote Distribution Chain)
 
 Distribute cryptographic integrity records to Git repositories for tamper-evident audit trails.
 
 #### Supported Providers
+
 - **GitHub** (public and private repositories)
-- **GitLab** (public and private repositories including self-hosted)
+- **GitLab** (public and private repositories, including self-hosted)
 
 #### How It Works
 
@@ -151,7 +176,7 @@ Distribute cryptographic integrity records to Git repositories for tamper-eviden
   "post_type": "post",
   "hash_algorithm": "sha256",
   "hash_value": "a3f5b8c2d9e1f4a7...",
-  "hmac_value": "b7c6d8e2f1a4b7c6..." (if HMAC enabled),
+  "hmac_value": "b7c6d8e2f1a4b7c6...",
   "author_id": 1,
   "timestamp": "2026-02-15T12:05:30Z",
   "plugin_version": "1.5.9",
@@ -161,36 +186,31 @@ Distribute cryptographic integrity records to Git repositories for tamper-eviden
 
 #### Configuration
 
-**GitHub Setup**:
-1. Create Personal Access Token with `repo` scope
+**GitHub:**
+
+1. Create a Personal Access Token with `repo` scope
 2. Navigate to **External Anchoring** settings
 3. Enter repository: `username/repo`
 4. Enter branch: `main`
 5. Paste token and save
 
-**GitLab Setup**:
-1. Create Personal Access Token with `api` scope
+**GitLab:**
+
+1. Create a Personal Access Token with `api` scope
 2. Navigate to **External Anchoring** settings
 3. Enter repository: `username/project`
-4. Enter GitLab URL (default: https://gitlab.com)
+4. Enter GitLab URL (default: `https://gitlab.com`)
 5. Paste token and save
 
 #### Benefits
 
-- **Tamper-evident**: Git commits prove when hashes were created
-- **Distributed verification**: Anyone can verify via Git history
-- **Automatic backups**: Integrity records preserved off-site
-- **Audit compliance**: Immutable chain for regulatory requirements
-- **Public transparency**: Optional public repository for trust
+- **Tamper-evident** — Git commits prove when hashes were created
+- **Distributed verification** — anyone can verify via Git history
+- **Automatic backups** — integrity records preserved off-site
+- **Audit compliance** — immutable chain for regulatory requirements
+- **Public transparency** — optional public repository for trust
 
-### HMAC Verification
-
-```bash
-# Requires secret key from wp-config.php
-echo -n "canonical_content" | openssl dgst -sha256 -hmac "YOUR_SECRET_KEY"
-```
-
-### Git Chain Verification
+#### Git Chain Verification
 
 ```bash
 # Clone anchor repository
@@ -207,6 +227,7 @@ cat document_20260215_120530.json
 git log --follow document_20260215_120530.json
 ```
 
+---
 
 ### SEO & Crawling Files
 
@@ -261,24 +282,28 @@ It does not attempt to replace full SEO suites or marketing tools. Instead, it f
 
 The plugin treats documentation as a first-class concern rather than an afterthought. By providing dedicated tools for document creation, organization, and publication, ArchivioMD encourages teams to maintain comprehensive, up-to-date documentation as part of their standard workflow rather than as a separate project that falls behind schedule.
 
+---
+
 ## Installation
 
-1. Download or clone this repository.
-2. Upload the plugin folder to `/wp-content/plugins/`.
-3. Activate **ArchivioMD** from the WordPress Plugins menu.
-4. Navigate to **Meta Documentation & SEO** in the WordPress admin dashboard.
-5. Go to **Settings â†’ Permalinks** and click **Save Changes** to flush rewrite rules and enable file serving.
+1. Download or clone this repository
+2. Upload the plugin folder to `/wp-content/plugins/`
+3. Activate **ArchivioMD** from the WordPress Plugins menu
+4. Navigate to **Meta Documentation & SEO** in the WordPress admin dashboard
+5. Go to **Settings → Permalinks** and click **Save Changes** to flush rewrite rules and enable file serving
 
-The permalink flush is critical for the plugin to properly serve documentation files at their expected URLs. Without this step, requests for markdown and HTML files will return 404 errors.
+> **Important:** The permalink flush is critical for the plugin to properly serve documentation files at their expected URLs. Without this step, requests for markdown and HTML files will return 404 errors.
 
 ---
 
 ## Requirements
 
-- WordPress 6.0 or higher
-- PHP 8.0 or higher
-- Proper file system permissions for root-level file storage (optional but recommended for `robots.txt`)
-- `manage_options` capability for accessing plugin features
+| Requirement | Minimum |
+|---|---|
+| WordPress | 6.0 |
+| PHP | 7.4 |
+| File permissions | Root-level write access (optional, recommended for `robots.txt`) |
+| Capability | `manage_options` |
 
 ---
 
@@ -286,14 +311,14 @@ The permalink flush is critical for the plugin to properly serve documentation f
 
 ArchivioMD implements WordPress security best practices throughout:
 
-- All AJAX requests are protected with WordPress nonces to prevent cross-site request forgery attacks.
-- Access to all plugin functionality requires the `manage_options` capability, restricting use to administrators.
-- All user input is sanitized using WordPress sanitization functions before processing or storage.
-- All output is escaped appropriately to prevent cross-site scripting vulnerabilities.
-- File operations validate filenames to prevent directory traversal attacks.
-- Proper file permissions are set on creation and updates to maintain security.
+- All AJAX requests are protected with WordPress nonces to prevent CSRF attacks
+- Access to all plugin functionality requires the `manage_options` capability, restricting use to administrators
+- All user input is sanitized using WordPress sanitization functions before processing or storage
+- All output is escaped appropriately to prevent XSS vulnerabilities
+- File operations validate filenames to prevent directory traversal attacks
+- Proper file permissions are set on creation and updates
 
-If you discover a security issue, please report it responsibly. See `security.md` for reporting guidelines once available.
+If you discover a security issue, please report it responsibly. See [`SECURITY.md`](SECURITY.md) for reporting guidelines.
 
 ---
 
@@ -301,18 +326,19 @@ If you discover a security issue, please report it responsibly. See `security.md
 
 ArchivioMD uses WordPress rewrite rules to serve documentation files at clean URLs:
 
-- Markdown files are accessible at `https://yoursite.com/filename.md`
-- HTML files are accessible at `https://yoursite.com/filename.html`
-- SEO files like `robots.txt` are accessible at `https://yoursite.com/robots.txt`
-- Sitemaps are accessible at `https://yoursite.com/sitemap.xml` or `https://yoursite.com/sitemap_index.xml`
+| File type | URL |
+|---|---|
+| Markdown | `https://yoursite.com/filename.md` |
+| HTML | `https://yoursite.com/filename.html` |
+| robots.txt | `https://yoursite.com/robots.txt` |
+| Sitemap (small) | `https://yoursite.com/sitemap.xml` |
+| Sitemap (large) | `https://yoursite.com/sitemap_index.xml` |
 
-All files are served with appropriate content-type headers and caching headers for optimal performance. The plugin checks for physical files in the site root first, allowing manual overrides when needed, and falls back to plugin-managed files when no physical file exists.
+All files are served with appropriate content-type and caching headers. The plugin checks for physical files in the site root first, allowing manual overrides, and falls back to plugin-managed files when no physical file exists.
 
 ---
 
 ## Roadmap
-
-**Upcoming Enhancements:**
 
 - Additional document types and templates for common documentation needs
 - Optional social metadata and verification files for platform integration
@@ -327,9 +353,9 @@ All files are served with appropriate content-type headers and caching headers f
 
 ## License
 
-This plugin is licensed under the **GNU General Public License v2.0 (GPL-2.0)**, the same license used by WordPress.
+Licensed under the **GNU General Public License v2.0 (GPL-2.0)** — the same license used by WordPress.
 
-See `license.md` for full license text.
+See [`LICENSE`](LICENSE) for full license text.
 
 ---
 
@@ -341,12 +367,11 @@ See `license.md` for full license text.
 
 ## Links
 
-- Plugin Website: https://mountainviewprovisions.com/ArchivioMD
-- GitHub Repository: https://github.com/mountainviewprovisions/archiviomd
+- Plugin website: [mountainviewprovisions.com/ArchivioMD](https://mountainviewprovisions.com/ArchivioMD)
+- GitHub: [github.com/mountainviewprovisions/archiviomd](https://github.com/mountainviewprovisions/archiviomd)
 
 ---
 
 ## Support
 
-For questions, feature requests, or bug reports, please use the GitHub repository's issue tracker. We welcome community feedback and contributions to make ArchivioMD more useful for documentation-focused WordPress sites.
-
+For questions, feature requests, or bug reports, please use the [GitHub issue tracker](https://github.com/MountainViewProvisions/archiviomd/issues). We welcome community feedback and contributions to make ArchivioMD more useful for documentation-focused WordPress sites.
