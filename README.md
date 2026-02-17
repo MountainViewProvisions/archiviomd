@@ -6,11 +6,13 @@ It is designed for developers, site owners, and teams who want a clean, structur
 
 [![Version](https://img.shields.io/badge/version-1.5.9-667eea)](https://github.com/MountainViewProvisions/archiviomd/releases)
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4)](https://php.net)
+[![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B)](https://wordpress.org)
 [![Add-on](https://img.shields.io/badge/add--on-ArchivioID-764ba2)](https://github.com/MountainViewProvisions/archivio-id)
-[![Crypto](https://img.shields.io/badge/crypto-SHA256%20%7C%20SHA512%20%7C%20BLAKE2b-10b981)](https://github.com/MountainViewProvisions/archiviomd)
+[![Crypto](https://img.shields.io/badge/crypto-SHA256%20%7C%20SHA512%20%7C%20SHA3%20%7C%20BLAKE2b%20%7C%20BLAKE3%20%7C%20SHAKE-10b981)](https://github.com/MountainViewProvisions/archiviomd)
+[![HMAC](https://img.shields.io/badge/HMAC-supported-667eea)](https://github.com/MountainViewProvisions/archiviomd)
 [![Anchoring](https://img.shields.io/badge/anchoring-GitHub%20%7C%20GitLab-1f2937)](https://github.com/MountainViewProvisions/archiviomd)
+
 
 ---
 
