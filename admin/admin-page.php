@@ -398,7 +398,7 @@ $seo_total = count($seo_files);
                             if ($sitemap_info['type'] === 'small') {
                                 esc_html_e('Single sitemap configuration (for small sites)', 'archiviomd');
                             } else {
-                                printf(__('Sitemap index configuration (%d files)', 'archiviomd'), $sitemap_info['file_count']);
+                                printf( esc_html__( 'Sitemap index configuration (%d files)', 'archiviomd'), $sitemap_info['file_count']);
                             }
                             ?>
                         </p>

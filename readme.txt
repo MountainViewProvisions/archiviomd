@@ -2,8 +2,8 @@
 Contributors: mountainviewprovisions
 Tags: documentation, markdown, seo, sitemap, robots.txt
 Requires at least: 5.0
-Tested up to: 6.7
-Stable tag: 1.1.1
+Tested up to: 6.9
+Stable tag: 1.5.9
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,57 @@ ArchivioMD is a comprehensive WordPress plugin for managing meta-documentation, 
 * Backup & Restore: Create portable ZIP archives of metadata and files; restore with mandatory dry-run verification
 * Metadata Verification: Manual checksum verification against stored SHA-256 hashes
 * Metadata Cleanup on Uninstall: Optional (disabled by default) cleanup of metadata when uninstalling plugin
+
+**Verification Badge System**
+- **Visual badges** on posts and pages showing integrity status
+- **Three states**: ✓ Verified (green), ✗ Unverified (red), − Not Signed (gray)
+- **Automatic display** below titles or content
+- **Manual placement** via `[hash_verify]` shortcode
+- **Downloadable verification files** for offline confirmation
+
+= Supported Hash Algorithms =
+
+**Standard Algorithms**:
+- SHA-256 (default)
+- SHA-512
+- SHA3-256
+- SHA3-512
+- BLAKE2b
+
+**Experimental Algorithms**:
+- BLAKE3 (requires PHP extension)
+- SHAKE128-256
+- SHAKE256-512
+
+All algorithms supported in both:
+- Post/page hash generation
+- Markdown file hash verification
+- HTML rendering hash preservation
+
+= HMAC Integrity Mode =
+
+Add authentication to content verification:
+
+```php
+// Add to wp-config.php
+define('ARCHIVIOMD_HMAC_KEY', 'your-secret-key');
+```
+
+HMAC mode provides:
+- **Content integrity**: Proves content hasn't changed
+- **Authenticity**: Proves hash was created by key holder
+- **Tamper detection**: Any modification invalidates the hash
+- **Key-based verification**: Offline verification requires secret key
+
+Enable HMAC in **Cryptographic Verification** → **Settings** → **Enable HMAC Mode**
+
+= External Anchoring (Remote Distribution Chain) =
+
+Distribute cryptographic integrity records to Git repositories for tamper-evident audit trails.
+
+#### Supported Providers
+- **GitHub** (public and private repositories)
+- **GitLab** (public and private repositories including self-hosted)
 
 = Key Capabilities =
 
@@ -85,7 +136,7 @@ ArchivioMD is a comprehensive WordPress plugin for managing meta-documentation, 
 = From ZIP File via FTP =
 
 1. Download and extract the plugin ZIP file
-2. Upload the `archivio-with-metadata` folder to `/wp-content/plugins/`
+2. Upload the `archiviomd` folder to `/wp-content/plugins/`
 3. Activate the plugin through the WordPress admin Plugins menu
 4. Navigate to Settings → Permalinks and click "Save Changes" (required for file serving)
 
@@ -370,18 +421,45 @@ The plugin uses PHP Parsedown for Markdown processing, which supports standard M
 
 == Screenshots ==
 
-1. Main admin interface showing meta-documentation categories and file management
-2. File editor with metadata display (UUID, checksum, changelog)
-3. Sitemap generation interface with auto-update options
-4. Public index page settings and document visibility controls
-5. Compliance Tools page (Tools → ArchivioMD) showing all four tools
-6. Metadata Export (CSV) download in progress
-7. Backup & Restore with mandatory dry-run verification report
-8. Metadata Verification results showing verified, mismatched, and missing files
-9. Metadata Cleanup on Uninstall settings with opt-in confirmation
-10. Changelog viewer showing document modification history
+1. 001.png
+2. 002.png
+3. 003.png
+
 
 == Changelog ==
+
+= 1.5.9 - 2026-02-14 =
+
+* Added HMAC Integrity Mode with secret key support (ARCHIVIOMD_HMAC_KEY constant)
+* Added External Anchoring to GitHub and GitLab repositories
+* Expanded hash algorithm support: SHA3-256, SHA3-512, BLAKE2b, BLAKE3, SHAKE128-256, SHAKE256-512
+* Security hardening: input sanitization, output escaping, nonce validation
+* Fixed inline script and style compliance for WordPress.org guidelines
+* Updated text domain to match plugin slug
+
+= 1.4.1 - 2026-02-12 =
+
+* Major jumps Fixed - Critical Bug Fixes
+* PHP Compatibility Issue (CRITICAL)
+* Fixed fatal error on PHP < 7.2 when `ARCHIVIOMD_HMAC_KEY` constant was defined
+* Added `function_exists()` check for `hash_hmac_algos()` before usage
+* hash_hmac_algos()` was introduced in PHP 7.2.0 and caused admin menu breakage on older PHP versions
+* BLAKE2b algorithm now gracefully falls back to SHA-256 on PHP < 7.2
+  - **Performance Optimization**
+  - Optimized `admin_hmac_notices()` to skip execution when HMAC mode is disabled
+  - Prevents unnecessary `hmac_status()` calls on every admin page load
+  - Eliminates overhead when constant is defined but HMAC feature is not in use
+
+
+
+= 1.3.0 - 2026-02-10 =
+* Archivio Post - Content Hash Verification System
+* New `MDSM_Archivio_Post` class for deterministic SHA-256 hash generation
+* Automatic hash generation when posts are published or updated
+* Content canonicalization with line ending normalization and whitespace trimming
+* Post ID and Author ID binding to prevent hash reuse
+* Visual verification badges with three states: Verified (green), Unverified (red), Not Signed (gray)
+  
 
 = 1.1.1 - 2026-02-08 =
 * Added: Metadata Cleanup on Uninstall feature (opt-in, disabled by default)
@@ -408,6 +486,15 @@ The plugin uses PHP Parsedown for Markdown processing, which supports standard M
 * Dismissible admin notices for guidance
 
 == Upgrade Notice ==
+
+= 1.5.9 =
+Major update adding algorithm expansion, HMAC integrity mode, External Anchoring to GitHub/GitLab, and security hardening. Flush permalinks after upgrading.
+
+= 1.4.1 =
+Critical bug fix for PHP < 7.2 compatibility. Upgrade recommended for all users.
+
+= 1.3.0 =
+Adds Archivio Post content hash verification system with visual badges and audit log.
 
 = 1.1.1 =
 Adds optional metadata cleanup on uninstall (disabled by default). All existing functionality preserved. No action required unless you want to configure cleanup settings.
@@ -504,11 +591,12 @@ ArchivioMD does not collect, store, or transmit any personal data from site visi
 WordPress user IDs and usernames are recorded in changelogs to maintain an audit trail. This is standard administrative logging practice.
 
 The plugin does not:
-* Make external API calls
-* Track user behavior
+* Track site visitor behavior
 * Set cookies for visitors
 * Collect analytics
-* Share data with third parties
+* Share visitor data with third parties
+
+When the External Anchoring feature is used by administrators, the plugin sends document hashes and metadata to GitHub or GitLab (see External Services section below). No visitor data is ever transmitted.
 
 = License =
 
@@ -526,6 +614,34 @@ Under the following conditions:
 * Provide source code with distributions
 
 For the full license text, see https://www.gnu.org/licenses/gpl-2.0.html
+
+== External Services ==
+
+ArchivioMD includes an optional **External Anchoring** feature that allows administrators to record cryptographic document hashes in remote Git repositories as an immutable audit trail. This feature is disabled by default and must be explicitly configured by the site administrator.
+
+= GitHub API =
+
+**What it does:** When configured, the plugin can write document hash records (commit messages containing the document name, hash algorithm, and checksum) to a GitHub repository via the GitHub REST API.
+
+**What data is sent:** The document filename, hash algorithm identifier, and cryptographic checksum (hash value). No document content or personal data is transmitted. Requests are made only when an administrator triggers anchoring or when the scheduled background job processes the queue.
+
+**When it is sent:** Only when the External Anchoring feature is configured with a GitHub repository and a valid personal access token. Data is sent when documents are saved or when the background cron job runs (if anchoring is queued).
+
+**Service provider:** GitHub, Inc.
+**Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+**Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+
+= GitLab API =
+
+**What it does:** When configured, the plugin can write document hash records to a GitLab repository (self-hosted or GitLab.com) via the GitLab REST API.
+
+**What data is sent:** The document filename, hash algorithm identifier, and cryptographic checksum (hash value). No document content or personal data is transmitted.
+
+**When it is sent:** Only when the External Anchoring feature is configured with a GitLab repository and a valid access token. Data is sent when documents are saved or when the background cron job processes the anchoring queue.
+
+**Service provider:** GitLab B.V. (for GitLab.com) or self-hosted instance
+**Terms of Service:** https://about.gitlab.com/terms/
+**Privacy Policy:** https://about.gitlab.com/privacy/
 
 == Credits ==
 

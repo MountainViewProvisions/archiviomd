@@ -10,7 +10,7 @@
  * Tested up to: 6.9
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: archivio-md
+ * Text Domain: archiviomd
  */
 
 // Exit if accessed directly
@@ -192,7 +192,7 @@ class Meta_Documentation_SEO_Manager {
      */
     public function render_admin_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'archiviomd'));
         }
         
         require_once MDSM_PLUGIN_DIR . 'admin/admin-page.php';
@@ -217,16 +217,12 @@ class Meta_Documentation_SEO_Manager {
         <div class="notice notice-warning is-dismissible" id="mdsm-permalink-notice">
             <p><strong>Go to Settings → Permalinks and click 'Save Changes' ← CRITICAL!</strong></p>
         </div>
-        <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('#mdsm-permalink-notice').on('click', '.notice-dismiss', function() {
-                $.post(ajaxurl, {
-                    action: 'mdsm_dismiss_permalink_notice',
-                    nonce: '<?php echo wp_create_nonce('mdsm_dismiss_notice'); ?>'
-                });
-            });
-        });
-        </script>
+        <?php
+        wp_add_inline_script(
+            'mdsm-admin-scripts',
+            'jQuery(document).ready(function($){$("#mdsm-permalink-notice").on("click",".notice-dismiss",function(){$.post(ajaxurl,{action:"mdsm_dismiss_permalink_notice",nonce:"' . esc_js( wp_create_nonce('mdsm_dismiss_notice') ) . '"});});});'
+        );
+        ?>
         <?php
     }
     
@@ -254,12 +250,22 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
-        $content = wp_unslash($_POST['content']); // Don't sanitize content yet, preserve formatting
+        $file_type = sanitize_text_field( $_POST['file_type'] );
+        $file_name = sanitize_text_field( $_POST['file_name'] );
+        
+        // Validate file_type against known-good values before any file operation
+        $allowed_file_types = array( 'meta', 'seo' );
+        if ( ! in_array( $file_type, $allowed_file_types, true ) ) {
+            wp_send_json_error( array( 'message' => 'Invalid file type.' ) );
+        }
+        
+        // Content is raw markdown/text and must not be sanitized (that would corrupt formatting).
+        // XSS safety is enforced at render time: parse_inline() escapes all text nodes via esc_html()
+        // before applying markdown patterns, and HTML output is served with X-Content-Type-Options: nosniff.
+        $content = wp_unslash( $_POST['content'] );
         
         $file_manager = new MDSM_File_Manager();
-        $result = $file_manager->save_file($file_type, $file_name, $content);
+        $result = $file_manager->save_file( $file_type, $file_name, $content );
         
         // Queue external anchor for native Markdown documents after successful save.
         if ($result['success'] && $file_type === 'meta' && !empty($result['metadata']) && !empty(trim($content))) {
@@ -316,7 +322,7 @@ class Meta_Documentation_SEO_Manager {
         
         $file_type = sanitize_text_field($_POST['file_type']);
         $file_name = sanitize_text_field($_POST['file_name']);
-        $delete_html = isset($_POST['delete_html']) ? (bool) $_POST['delete_html'] : false;
+        $delete_html = isset( $_POST['delete_html'] ) ? (bool) sanitize_text_field( wp_unslash( $_POST['delete_html'] ) ) : false;
         
         $file_manager = new MDSM_File_Manager();
         $result = $file_manager->delete_file($file_type, $file_name);
@@ -403,7 +409,7 @@ class Meta_Documentation_SEO_Manager {
         }
         
         $sitemap_type = sanitize_text_field($_POST['sitemap_type']);
-        $auto_update = isset($_POST['auto_update']) ? (bool) $_POST['auto_update'] : false;
+        $auto_update = isset( $_POST['auto_update'] ) ? (bool) sanitize_text_field( wp_unslash( $_POST['auto_update'] ) ) : false;
         
         // Save auto-update preference
         update_option('mdsm_auto_update_sitemap', $auto_update);
@@ -523,10 +529,10 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $enabled = isset($_POST['enabled']) && $_POST['enabled'] == '1';
+        $enabled = isset( $_POST['enabled'] ) && sanitize_text_field( wp_unslash( $_POST['enabled'] ) ) === '1';
         $page_id = isset($_POST['page_id']) ? intval($_POST['page_id']) : 0;
-        $public_docs = isset($_POST['public_docs']) ? $_POST['public_docs'] : array();
-        $descriptions = isset($_POST['descriptions']) ? $_POST['descriptions'] : array();
+        $public_docs = isset( $_POST['public_docs'] ) ? wp_unslash( $_POST['public_docs'] ) : array();
+        $descriptions = isset( $_POST['descriptions'] ) ? wp_unslash( $_POST['descriptions'] ) : array();
         
         // Validate page selection if enabled
         if ($enabled && !$page_id) {
@@ -849,6 +855,13 @@ class Meta_Documentation_SEO_Manager {
         header('Content-Type: ' . $content_type);
         header('Content-Length: ' . strlen($content));
         header('Cache-Control: public, max-age=3600');
+        // Prevent MIME-sniffing and clickjacking on generated files
+        header('X-Content-Type-Options: nosniff');
+        if ($ext !== 'html') {
+            // Force non-HTML files to download rather than render, preventing
+            // browsers from sniffing and executing as HTML
+            header('Content-Disposition: inline; filename="' . rawurlencode($filename) . '"');
+        }
         
         // Output
         echo $content;

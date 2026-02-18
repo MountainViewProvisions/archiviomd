@@ -293,7 +293,7 @@ class MDSM_Anchor_Provider_GitHub implements MDSM_Anchor_Provider_Interface {
 			return array( 'success' => false, 'message' => __( 'Repository not found. Check owner and repository name.', 'archiviomd' ) );
 		}
 		if ( $code < 200 || $code > 299 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Unexpected HTTP %d response from GitHub.', 'archiviomd' ), $code ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Unexpected HTTP %d response from GitHub.', 'archiviomd' ), $code ) );
 		}
 
 		// 2. Verify branch exists.
@@ -308,10 +308,10 @@ class MDSM_Anchor_Provider_GitHub implements MDSM_Anchor_Provider_Interface {
 		}
 		$b_code = wp_remote_retrieve_response_code( $b_response );
 		if ( 404 === $b_code ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Branch "%s" not found in repository.', 'archiviomd' ), esc_html( $branch ) ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Branch "%s" not found in repository.', 'archiviomd' ), esc_html( $branch ) ) );
 		}
 		if ( $b_code < 200 || $b_code > 299 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Unexpected HTTP %d verifying branch.', 'archiviomd' ), $b_code ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Unexpected HTTP %d verifying branch.', 'archiviomd' ), $b_code ) );
 		}
 
 		return array( 'success' => true, 'message' => __( 'Connection successful. Repository and branch verified.', 'archiviomd' ) );
@@ -489,7 +489,7 @@ class MDSM_Anchor_Provider_GitLab implements MDSM_Anchor_Provider_Interface {
 			return array( 'success' => false, 'message' => __( 'Project not found. Check group/user and project name.', 'archiviomd' ) );
 		}
 		if ( $code < 200 || $code > 299 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Unexpected HTTP %d response from GitLab.', 'archiviomd' ), $code ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Unexpected HTTP %d response from GitLab.', 'archiviomd' ), $code ) );
 		}
 
 		// Verify branch.
@@ -507,10 +507,10 @@ class MDSM_Anchor_Provider_GitLab implements MDSM_Anchor_Provider_Interface {
 		}
 		$b_code = wp_remote_retrieve_response_code( $b_response );
 		if ( 404 === $b_code ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Branch "%s" not found in project.', 'archiviomd' ), esc_html( $branch ) ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Branch "%s" not found in project.', 'archiviomd' ), esc_html( $branch ) ) );
 		}
 		if ( $b_code < 200 || $b_code > 299 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'Unexpected HTTP %d verifying branch.', 'archiviomd' ), $b_code ) );
+			return array( 'success' => false, 'message' => sprintf( esc_html__(  'Unexpected HTTP %d verifying branch.', 'archiviomd' ), $b_code ) );
 		}
 
 		return array( 'success' => true, 'message' => __( 'Connection successful. Project and branch verified.', 'archiviomd' ) );
@@ -1026,7 +1026,7 @@ class MDSM_External_Anchoring {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'archiviomd' ) ) );
 		}
 
-		$this->save_settings( $_POST );
+		$this->save_settings( wp_unslash( $_POST ) );
 
 		wp_send_json_success( array( 'message' => __( 'Settings saved successfully.', 'archiviomd' ) ) );
 	}

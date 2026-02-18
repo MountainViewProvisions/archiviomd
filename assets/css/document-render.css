@@ -1,0 +1,428 @@
+/* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #000;
+            background: #fff;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Document Header (No Print) */
+        .mdsm-document-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .mdsm-header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .mdsm-title-section {
+            flex: 1;
+        }
+        
+        .mdsm-doc-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+            margin: 0 0 0.25rem 0;
+        }
+        
+        .mdsm-meta {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .mdsm-separator {
+            margin: 0 0.5rem;
+        }
+        
+        /* Action Buttons */
+        .mdsm-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .mdsm-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            color: #495057;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .mdsm-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            color: #212529;
+        }
+        
+        .mdsm-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .mdsm-btn svg {
+            flex-shrink: 0;
+        }
+        
+        /* Main Content */
+        .mdsm-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        /* Typography */
+        .mdsm-content h1,
+        .mdsm-content h2,
+        .mdsm-content h3,
+        .mdsm-content h4,
+        .mdsm-content h5,
+        .mdsm-content h6 {
+            font-weight: 600;
+            line-height: 1.3;
+            color: #000;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .mdsm-content h1 {
+            font-size: 2.25rem;
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        
+        .mdsm-content h2 {
+            font-size: 1.875rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.375rem;
+        }
+        
+        .mdsm-content h3 {
+            font-size: 1.5rem;
+        }
+        
+        .mdsm-content h4 {
+            font-size: 1.25rem;
+        }
+        
+        .mdsm-content h5 {
+            font-size: 1.125rem;
+        }
+        
+        .mdsm-content h6 {
+            font-size: 1rem;
+        }
+        
+        .mdsm-content p {
+            margin-bottom: 1rem;
+            color: #212529;
+        }
+        
+        /* Lists */
+        .mdsm-content ul,
+        .mdsm-content ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+        
+        .mdsm-content li {
+            margin-bottom: 0.5rem;
+            color: #212529;
+        }
+        
+        .mdsm-content ul {
+            list-style-type: disc;
+        }
+        
+        .mdsm-content ol {
+            list-style-type: decimal;
+        }
+        
+        /* Links */
+        .mdsm-content a {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        
+        .mdsm-content a:hover {
+            color: #0052a3;
+        }
+        
+        /* Code */
+        .mdsm-content code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.875em;
+            color: #d63384;
+            border: 1px solid #dee2e6;
+        }
+        
+        .mdsm-content pre {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .mdsm-content pre code {
+            background: transparent;
+            padding: 0;
+            color: #000;
+            border: none;
+            font-size: 0.875rem;
+        }
+        
+        /* Blockquotes */
+        .mdsm-content blockquote {
+            border-left: 4px solid #dee2e6;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        /* Horizontal Rules */
+        .mdsm-content hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 2rem 0;
+        }
+        
+        /* Images */
+        .mdsm-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem 0;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        /* Tables */
+        .mdsm-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .mdsm-content table th,
+        .mdsm-content table td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .mdsm-content table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #000;
+        }
+        
+        .mdsm-content table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        /* Footer */
+        .mdsm-footer {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 2rem 3rem;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.875rem;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .mdsm-footer-credit {
+            margin: 1rem 0 0;
+        }
+        
+        .mdsm-footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .mdsm-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Document Metadata */
+        .mdsm-doc-metadata {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-family: "Courier New", Courier, monospace;
+        }
+        
+        .mdsm-metadata-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        .mdsm-metadata-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .mdsm-metadata-label {
+            font-weight: 600;
+            color: #495057;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        .mdsm-metadata-value {
+            word-break: break-all;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .mdsm-checksum {
+            font-size: 0.7rem;
+        }
+        
+        /* Print Styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                background: #fff;
+            }
+            
+            .mdsm-content {
+                max-width: 100%;
+                padding: 1rem;
+            }
+            
+            .mdsm-content h1,
+            .mdsm-content h2,
+            .mdsm-content h3,
+            .mdsm-content h4,
+            .mdsm-content h5,
+            .mdsm-content h6 {
+                page-break-after: avoid;
+            }
+            
+            .mdsm-content pre,
+            .mdsm-content blockquote,
+            .mdsm-content table {
+                page-break-inside: avoid;
+            }
+            
+            .mdsm-content a {
+                color: #000;
+                text-decoration: none;
+            }
+            
+            .mdsm-content a[href]:after {
+                content: " (" attr(href) ")";
+                font-size: 0.875em;
+                color: #6c757d;
+            }
+            
+            .mdsm-content code {
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+            }
+            
+            .mdsm-content pre {
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+            }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .mdsm-document-header {
+                padding: 1rem;
+            }
+            
+            .mdsm-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .mdsm-actions {
+                width: 100%;
+            }
+            
+            .mdsm-btn {
+                flex: 1;
+                justify-content: center;
+            }
+            
+            .mdsm-content {
+                padding: 2rem 1rem;
+            }
+            
+            .mdsm-doc-title {
+                font-size: 1.25rem;
+            }
+            
+            .mdsm-content h1 {
+                font-size: 1.75rem;
+            }
+            
+            .mdsm-content h2 {
+                font-size: 1.5rem;
+            }
+            
+            .mdsm-content h3 {
+                font-size: 1.25rem;
+            }
+            
+            .mdsm-footer {
+                padding: 1.5rem 1rem 2rem;
+            }
+            
+            /* Stack metadata vertically on mobile */
+            .mdsm-metadata-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .mdsm-metadata-label {
+                margin-bottom: 0.25rem;
+            }
+        }

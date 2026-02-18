@@ -37,24 +37,24 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 ?>
 
 <div class="wrap archivio-post-admin">
-	<h1><?php _e( 'Archivio Post – Content Hash Verification', 'archiviomd' ); ?></h1>
+	<h1><?php esc_html_e( 'Archivio Post – Content Hash Verification', 'archiviomd' ); ?></h1>
 
 	<p class="description">
-		<?php _e( 'Generate and verify deterministic cryptographic hashes for your posts to ensure content integrity. Supports SHA-256, SHA-512, SHA3-256, SHA3-512, and BLAKE2b in Standard and HMAC modes.', 'archiviomd' ); ?>
+		<?php esc_html_e( 'Generate and verify deterministic cryptographic hashes for your posts to ensure content integrity. Supports SHA-256, SHA-512, SHA3-256, SHA3-512, and BLAKE2b in Standard and HMAC modes.', 'archiviomd' ); ?>
 	</p>
 
 	<nav class="nav-tab-wrapper wp-clearfix" style="margin-top:20px;">
 		<a href="?page=archivio-post&tab=settings"
 		   class="nav-tab <?php echo $active_tab === 'settings' ? 'nav-tab-active' : ''; ?>">
-			<?php _e( 'Settings', 'archiviomd' ); ?>
+			<?php esc_html_e( 'Settings', 'archiviomd' ); ?>
 		</a>
 		<a href="?page=archivio-post&tab=audit"
 		   class="nav-tab <?php echo $active_tab === 'audit' ? 'nav-tab-active' : ''; ?>">
-			<?php _e( 'Audit Log', 'archiviomd' ); ?>
+			<?php esc_html_e( 'Audit Log', 'archiviomd' ); ?>
 		</a>
 		<a href="?page=archivio-post&tab=help"
 		   class="nav-tab <?php echo $active_tab === 'help' ? 'nav-tab-active' : ''; ?>">
-			<?php _e( 'Help & Documentation', 'archiviomd' ); ?>
+			<?php esc_html_e( 'Help & Documentation', 'archiviomd' ); ?>
 		</a>
 	</nav>
 
@@ -67,7 +67,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 	<div class="archivio-post-tab-content">
 
 		<!-- ── HMAC Integrity Mode ──────────────────────────────────── -->
-		<h2><?php _e( 'HMAC Integrity Mode', 'archiviomd' ); ?></h2>
+		<h2><?php esc_html_e( 'HMAC Integrity Mode', 'archiviomd' ); ?></h2>
 
 		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;margin-bottom:30px;">
 
@@ -94,7 +94,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 			?>
 
 			<p style="margin-top:0;">
-				<?php _e( 'When enabled, all new hashes are produced using <code>hash_hmac()</code> with a secret key defined in <code>wp-config.php</code>. Existing standard hashes remain fully verifiable.', 'archiviomd' ); ?>
+				<?php esc_html_e( 'When enabled, all new hashes are produced using <code>hash_hmac()</code> with a secret key defined in <code>wp-config.php</code>. Existing standard hashes remain fully verifiable.', 'archiviomd' ); ?>
 			</p>
 
 			<!-- Key status checklist -->
@@ -102,49 +102,49 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 				<tr>
 					<td style="padding:4px 10px 4px 0;">
 						<?php if ( $hmac_status['key_defined'] ) : ?>
-							<span style="color:#0a7537;font-weight:600;">✓ <?php _e( 'Key constant defined', 'archiviomd' ); ?></span>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'Key constant defined', 'archiviomd' ); ?></span>
 						<?php else : ?>
-							<span style="color:#d73a49;font-weight:600;">✗ <?php _e( 'Key constant missing', 'archiviomd' ); ?></span>
+							<span style="color:#d73a49;font-weight:600;">✗ <?php esc_html_e( 'Key constant missing', 'archiviomd' ); ?></span>
 						<?php endif; ?>
 					</td>
 					<td style="color:#646970;font-size:12px;">
 						<?php echo sprintf( '<code>%s</code>', esc_html( MDSM_Hash_Helper::HMAC_KEY_CONSTANT ) ); ?>
-						<?php _e( 'in wp-config.php', 'archiviomd' ); ?>
+						<?php esc_html_e( 'in wp-config.php', 'archiviomd' ); ?>
 					</td>
 				</tr>
 				<tr>
 					<td style="padding:4px 10px 4px 0;">
 						<?php if ( $hmac_status['key_strong'] ) : ?>
-							<span style="color:#0a7537;font-weight:600;">✓ <?php _e( 'Key length sufficient', 'archiviomd' ); ?></span>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'Key length sufficient', 'archiviomd' ); ?></span>
 						<?php elseif ( $hmac_status['key_defined'] ) : ?>
-							<span style="color:#dba617;font-weight:600;">⚠ <?php _e( 'Key too short', 'archiviomd' ); ?></span>
+							<span style="color:#dba617;font-weight:600;">⚠ <?php esc_html_e( 'Key too short', 'archiviomd' ); ?></span>
 						<?php else : ?>
-							<span style="color:#646970;">— <?php _e( 'Key length unknown', 'archiviomd' ); ?></span>
+							<span style="color:#646970;">— <?php esc_html_e( 'Key length unknown', 'archiviomd' ); ?></span>
 						<?php endif; ?>
 					</td>
 					<td style="color:#646970;font-size:12px;">
-						<?php echo sprintf( __( 'Minimum recommended: %d characters', 'archiviomd' ), MDSM_Hash_Helper::HMAC_KEY_MIN_LENGTH ); ?>
+						<?php echo sprintf( esc_html__(  'Minimum recommended: %d characters', 'archiviomd' ), MDSM_Hash_Helper::HMAC_KEY_MIN_LENGTH ); ?>
 					</td>
 				</tr>
 				<tr>
 					<td style="padding:4px 10px 4px 0;">
 						<?php if ( $hmac_status['hmac_available'] ) : ?>
-							<span style="color:#0a7537;font-weight:600;">✓ <?php _e( 'hash_hmac() available', 'archiviomd' ); ?></span>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'hash_hmac() available', 'archiviomd' ); ?></span>
 						<?php else : ?>
-							<span style="color:#d73a49;font-weight:600;">✗ <?php _e( 'hash_hmac() not available', 'archiviomd' ); ?></span>
+							<span style="color:#d73a49;font-weight:600;">✗ <?php esc_html_e( 'hash_hmac() not available', 'archiviomd' ); ?></span>
 						<?php endif; ?>
 					</td>
-					<td style="color:#646970;font-size:12px;"><?php _e( 'Built-in PHP function', 'archiviomd' ); ?></td>
+					<td style="color:#646970;font-size:12px;"><?php esc_html_e( 'Built-in PHP function', 'archiviomd' ); ?></td>
 				</tr>
 			</table>
 
 			<?php if ( ! $hmac_status['key_defined'] ) : ?>
 			<!-- wp-config.php snippet -->
 			<div style="background:#f5f5f5;padding:12px 15px;border-radius:4px;margin-bottom:20px;border:1px solid #ddd;">
-				<p style="margin:0 0 8px;font-weight:600;"><?php _e( 'Add this to your wp-config.php (before "stop editing"):', 'archiviomd' ); ?></p>
+				<p style="margin:0 0 8px;font-weight:600;"><?php esc_html_e( 'Add this to your wp-config.php (before "stop editing"):', 'archiviomd' ); ?></p>
 				<pre style="margin:0;font-size:13px;overflow-x:auto;white-space:pre-wrap;">define( '<?php echo esc_html( MDSM_Hash_Helper::HMAC_KEY_CONSTANT ); ?>', 'replace-with-a-long-random-secret-key' );</pre>
 				<p style="margin:8px 0 0;font-size:12px;color:#646970;">
-					<?php _e( 'Generate a strong key: <code>openssl rand -base64 48</code>', 'archiviomd' ); ?>
+					<?php esc_html_e( 'Generate a strong key: <code>openssl rand -base64 48</code>', 'archiviomd' ); ?>
 				</p>
 			</div>
 			<?php endif; ?>
@@ -159,9 +159,9 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 					       <?php checked( $hmac_status['mode_enabled'], true ); ?>
 					       <?php disabled( ! $hmac_status['key_defined'] || ! $hmac_status['hmac_available'], true ); ?>>
 					<span>
-						<strong><?php _e( 'Enable HMAC Integrity Mode', 'archiviomd' ); ?></strong>
+						<strong><?php esc_html_e( 'Enable HMAC Integrity Mode', 'archiviomd' ); ?></strong>
 						<span style="font-size:12px;color:#646970;display:block;">
-							<?php _e( 'Uses hash_hmac() instead of hash() for all new hashes.', 'archiviomd' ); ?>
+							<?php esc_html_e( 'Uses hash_hmac() instead of hash() for all new hashes.', 'archiviomd' ); ?>
 						</span>
 					</span>
 				</label>
@@ -169,43 +169,43 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 				<div style="margin-top:15px;">
 					<button type="submit" class="button button-primary" id="save-hmac-btn"
 					        <?php disabled( ! $hmac_status['key_defined'] || ! $hmac_status['hmac_available'], true ); ?>>
-						<?php _e( 'Save HMAC Setting', 'archiviomd' ); ?>
+						<?php esc_html_e( 'Save HMAC Setting', 'archiviomd' ); ?>
 					</button>
 					<span class="archivio-hmac-status" style="margin-left:10px;"></span>
 				</div>
 			</form>
 
 			<div style="margin-top:15px;padding:10px 15px;background:#f0f6ff;border-left:3px solid #2271b1;border-radius:4px;font-size:12px;color:#1d2327;">
-				<strong><?php _e( 'Key rotation note:', 'archiviomd' ); ?></strong>
-				<?php _e( 'Changing ARCHIVIOMD_HMAC_KEY invalidates all existing HMAC hashes. After rotating the key, republish affected posts to regenerate their HMAC hashes.', 'archiviomd' ); ?>
+				<strong><?php esc_html_e( 'Key rotation note:', 'archiviomd' ); ?></strong>
+				<?php esc_html_e( 'Changing ARCHIVIOMD_HMAC_KEY invalidates all existing HMAC hashes. After rotating the key, republish affected posts to regenerate their HMAC hashes.', 'archiviomd' ); ?>
 			</div>
 		</div>
 
 		<!-- ── Hash Algorithm ────────────────────────────────────────── -->
-		<h2><?php esc_html_e( 'Hash Algorithm', 'archivio-md-build' ); ?></h2>
+		<h2><?php esc_html_e( 'Hash Algorithm', 'archiviomd' ); ?></h2>
 
 		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;margin-bottom:30px;">
 			<p style="margin-top:0;">
-				<?php esc_html_e( 'Select the algorithm used for new hashes. Existing hashes are never re-computed; they remain verifiable using the algorithm recorded at the time they were created.', 'archivio-md-build' ); ?>
+				<?php esc_html_e( 'Select the algorithm used for new hashes. Existing hashes are never re-computed; they remain verifiable using the algorithm recorded at the time they were created.', 'archiviomd' ); ?>
 			</p>
 
 			<form id="archivio-algorithm-form">
 				<fieldset style="border:0;padding:0;margin:0;">
-					<legend class="screen-reader-text"><?php esc_html_e( 'Hash Algorithm', 'archivio-md-build' ); ?></legend>
+					<legend class="screen-reader-text"><?php esc_html_e( 'Hash Algorithm', 'archiviomd' ); ?></legend>
 
 					<!-- Standard Algorithms -->
 					<div class="algorithm-section" style="margin-bottom:25px;">
 						<h3 style="margin-top:0;margin-bottom:12px;font-size:14px;font-weight:600;color:#1d2327;">
-							<?php esc_html_e( 'Standard Algorithms', 'archivio-md-build' ); ?>
+							<?php esc_html_e( 'Standard Algorithms', 'archiviomd' ); ?>
 						</h3>
 						<?php
 						$standard_algos = MDSM_Hash_Helper::standard_algorithms();
 						$algo_meta = array(
-							'sha256'   => array( 'desc' => __( 'Default, universally supported, 64-char hex', 'archivio-md-build' ) ),
-							'sha512'   => array( 'desc' => __( 'Stronger collision resistance, 128-char hex', 'archivio-md-build' ) ),
-							'sha3-256' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 64-char hex (PHP 7.1+)', 'archivio-md-build' ) ),
-							'sha3-512' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 128-char hex (PHP 7.1+)', 'archivio-md-build' ) ),
-							'blake2b'  => array( 'desc' => __( 'Modern, fast, 128-char hex (PHP 7.2+)', 'archivio-md-build' ) ),
+							'sha256'   => array( 'desc' => __( 'Default, universally supported, 64-char hex', 'archiviomd' ) ),
+							'sha512'   => array( 'desc' => __( 'Stronger collision resistance, 128-char hex', 'archiviomd' ) ),
+							'sha3-256' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 64-char hex (PHP 7.1+)', 'archiviomd' ) ),
+							'sha3-512' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 128-char hex (PHP 7.1+)', 'archiviomd' ) ),
+							'blake2b'  => array( 'desc' => __( 'Modern, fast, 128-char hex (PHP 7.2+)', 'archiviomd' ) ),
 						);
 						foreach ( $standard_algos as $algo_key => $algo_label ) :
 							$avail       = MDSM_Hash_Helper::get_algorithm_availability( $algo_key );
@@ -224,9 +224,9 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 							<span style="color:#646970;font-size:12px;line-height:1.6;">
 								<?php echo esc_html( $desc ); ?>
 								<?php if ( $unavailable ) : ?>
-									<span style="color:#d73a49;">(<?php esc_html_e( 'not available on this PHP build', 'archivio-md-build' ); ?>)</span>
+									<span style="color:#d73a49;">(<?php esc_html_e( 'not available on this PHP build', 'archiviomd' ); ?>)</span>
 								<?php else : ?>
-									<span style="color:#0a7537;">(<?php esc_html_e( 'available', 'archivio-md-build' ); ?>)</span>
+									<span style="color:#0a7537;">(<?php esc_html_e( 'available', 'archiviomd' ); ?>)</span>
 								<?php endif; ?>
 							</span>
 						</label>
@@ -236,18 +236,18 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 					<!-- Experimental / Advanced Algorithms -->
 					<div class="algorithm-section" style="margin-bottom:20px;padding:15px;background:#fff8e5;border:1px solid #dba617;border-radius:4px;">
 						<h3 style="margin-top:0;margin-bottom:8px;font-size:14px;font-weight:600;color:#1d2327;">
-							<?php esc_html_e( 'Advanced / Experimental Algorithms', 'archivio-md-build' ); ?>
+							<?php esc_html_e( 'Advanced / Experimental Algorithms', 'archiviomd' ); ?>
 						</h3>
 						<p style="margin:0 0 12px 0;font-size:12px;color:#646970;">
-							<strong><?php esc_html_e( 'Warning:', 'archivio-md-build' ); ?></strong>
-							<?php esc_html_e( 'Experimental algorithms may be slower, may not work on all hosts, and will automatically fall back to SHA-256 or BLAKE2b if unavailable. Use standard algorithms for production sites.', 'archivio-md-build' ); ?>
+							<strong><?php esc_html_e( 'Warning:', 'archiviomd' ); ?></strong>
+							<?php esc_html_e( 'Experimental algorithms may be slower, may not work on all hosts, and will automatically fall back to SHA-256 or BLAKE2b if unavailable. Use standard algorithms for production sites.', 'archiviomd' ); ?>
 						</p>
 						<?php
 						$experimental_algos = MDSM_Hash_Helper::experimental_algorithms();
 						$exp_algo_meta = array(
-							'blake3'   => array( 'desc' => __( 'BLAKE3 with 256-bit output, extremely fast (PHP 8.1+ or fallback)', 'archivio-md-build' ) ),
-							'shake128' => array( 'desc' => __( 'SHAKE128 XOF with 256-bit output (PHP 7.1+ or fallback)', 'archivio-md-build' ) ),
-							'shake256' => array( 'desc' => __( 'SHAKE256 XOF with 512-bit output (PHP 7.1+ or fallback)', 'archivio-md-build' ) ),
+							'blake3'   => array( 'desc' => __( 'BLAKE3 with 256-bit output, extremely fast (PHP 8.1+ or fallback)', 'archiviomd' ) ),
+							'shake128' => array( 'desc' => __( 'SHAKE128 XOF with 256-bit output (PHP 7.1+ or fallback)', 'archiviomd' ) ),
+							'shake256' => array( 'desc' => __( 'SHAKE256 XOF with 512-bit output (PHP 7.1+ or fallback)', 'archiviomd' ) ),
 						);
 						foreach ( $experimental_algos as $algo_key => $algo_label ) :
 							$avail = MDSM_Hash_Helper::get_algorithm_availability( $algo_key );
@@ -264,9 +264,9 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 							<span style="color:#646970;font-size:12px;line-height:1.6;">
 								<?php echo esc_html( $desc ); ?>
 								<?php if ( $avail ) : ?>
-									<span style="color:#0a7537;">(<?php esc_html_e( 'native available', 'archivio-md-build' ); ?>)</span>
+									<span style="color:#0a7537;">(<?php esc_html_e( 'native available', 'archiviomd' ); ?>)</span>
 								<?php else : ?>
-									<span style="color:#d73a49;">(<?php esc_html_e( 'fallback mode', 'archivio-md-build' ); ?>)</span>
+									<span style="color:#d73a49;">(<?php esc_html_e( 'fallback mode', 'archiviomd' ); ?>)</span>
 								<?php endif; ?>
 							</span>
 						</label>
@@ -276,7 +276,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 
 				<div style="margin-top:15px;">
 					<button type="submit" class="button button-primary" id="save-algorithm-btn">
-						<?php esc_html_e( 'Save Algorithm', 'archivio-md-build' ); ?>
+						<?php esc_html_e( 'Save Algorithm', 'archiviomd' ); ?>
 					</button>
 					<span class="archivio-algorithm-status" style="margin-left:10px;"></span>
 				</div>
@@ -284,19 +284,19 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 
 			<?php if ( ! $blake2b_available || ! $sha3_available ) : ?>
 			<div style="margin-top:15px;padding:10px 15px;background:#fff8e5;border-left:4px solid #dba617;border-radius:4px;">
-				<strong><?php esc_html_e( 'Note:', 'archivio-md-build' ); ?></strong>
+				<strong><?php esc_html_e( 'Note:', 'archiviomd' ); ?></strong>
 				<?php if ( ! $sha3_available ) : ?>
-					<?php esc_html_e( 'SHA3-256 and SHA3-512 require PHP 7.1+. They are not available on this server.', 'archivio-md-build' ); ?>
+					<?php esc_html_e( 'SHA3-256 and SHA3-512 require PHP 7.1+. They are not available on this server.', 'archiviomd' ); ?>
 				<?php endif; ?>
 				<?php if ( ! $blake2b_available ) : ?>
-					<?php esc_html_e( 'BLAKE2b requires PHP 7.2+ with OpenSSL support. It is not available on this server.', 'archivio-md-build' ); ?>
+					<?php esc_html_e( 'BLAKE2b requires PHP 7.2+ with OpenSSL support. It is not available on this server.', 'archiviomd' ); ?>
 				<?php endif; ?>
 			</div>
 			<?php endif; ?>
 		</div>
 
 		<!-- ── Hash Generation Settings ──────────────────────────────── -->
-		<h2><?php _e( 'Hash Generation Settings', 'archiviomd' ); ?></h2>
+		<h2><?php esc_html_e( 'Hash Generation Settings', 'archiviomd' ); ?></h2>
 
 		<form id="archivio-post-settings-form">
 			<table class="form-table" role="presentation">
@@ -304,7 +304,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 					<tr>
 						<th scope="row">
 							<label for="auto-generate">
-								<?php _e( 'Automatic Hash Generation', 'archiviomd' ); ?>
+								<?php esc_html_e( 'Automatic Hash Generation', 'archiviomd' ); ?>
 							</label>
 						</th>
 						<td>
@@ -314,22 +314,22 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 								       name="auto_generate"
 								       value="1"
 								       <?php checked( $auto_generate, true ); ?>>
-								<?php _e( 'Automatically generate hash when posts are published or updated', 'archiviomd' ); ?>
+								<?php esc_html_e( 'Automatically generate hash when posts are published or updated', 'archiviomd' ); ?>
 							</label>
 							<p class="description">
-								<?php _e( 'When enabled, a hash using the selected algorithm and current mode is generated for each post on publish/update.', 'archiviomd' ); ?>
+								<?php esc_html_e( 'When enabled, a hash using the selected algorithm and current mode is generated for each post on publish/update.', 'archiviomd' ); ?>
 							</p>
 						</td>
 					</tr>
 
 					<tr>
 						<th scope="row">
-							<label><?php _e( 'Display Verification Badge', 'archiviomd' ); ?></label>
+							<label><?php esc_html_e( 'Display Verification Badge', 'archiviomd' ); ?></label>
 						</th>
 						<td>
 							<fieldset>
 								<legend class="screen-reader-text">
-									<span><?php _e( 'Badge Display Options', 'archiviomd' ); ?></span>
+									<span><?php esc_html_e( 'Badge Display Options', 'archiviomd' ); ?></span>
 								</legend>
 
 								<label style="display:block;margin-bottom:10px;">
@@ -338,7 +338,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 									       name="show_badge"
 									       value="1"
 									       <?php checked( $show_badge, true ); ?>>
-									<?php _e( 'Display verification badge (master toggle)', 'archiviomd' ); ?>
+									<?php esc_html_e( 'Display verification badge (master toggle)', 'archiviomd' ); ?>
 								</label>
 
 								<div style="margin-left:25px;padding-left:15px;border-left:3px solid #ddd;">
@@ -348,7 +348,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 										       name="show_badge_posts"
 										       value="1"
 										       <?php checked( $show_badge_posts, true ); ?>>
-										<?php _e( 'Show badge on Posts', 'archiviomd' ); ?>
+										<?php esc_html_e( 'Show badge on Posts', 'archiviomd' ); ?>
 									</label>
 
 									<label style="display:block;">
@@ -357,20 +357,20 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 										       name="show_badge_pages"
 										       value="1"
 										       <?php checked( $show_badge_pages, true ); ?>>
-										<?php _e( 'Show badge on Pages', 'archiviomd' ); ?>
+										<?php esc_html_e( 'Show badge on Pages', 'archiviomd' ); ?>
 									</label>
 								</div>
 							</fieldset>
 
 							<!-- Badge preview -->
 							<div style="margin-top:15px;padding:15px;background:#f9f9f9;border-left:4px solid #2271b1;">
-								<strong><?php _e( 'Badge Preview:', 'archiviomd' ); ?></strong>
+								<strong><?php esc_html_e( 'Badge Preview:', 'archiviomd' ); ?></strong>
 								<div style="margin-top:10px;">
 									<span class="archivio-post-badge archivio-post-badge-verified">
 										<svg class="archivio-post-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
 											<path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
 										</svg>
-										<span class="archivio-post-badge-text"><?php _e( 'Verified', 'archiviomd' ); ?></span>
+										<span class="archivio-post-badge-text"><?php esc_html_e( 'Verified', 'archiviomd' ); ?></span>
 										<button class="archivio-post-download" title="<?php esc_attr_e( 'Download verification file', 'archiviomd' ); ?>">
 											<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
 												<path d="M8.5 1.75a.75.75 0 00-1.5 0v6.69L5.03 6.47a.75.75 0 00-1.06 1.06l3.5 3.5a.75.75 0 001.06 0l3.5-3.5a.75.75 0 10-1.06-1.06L8.5 8.44V1.75zM3.5 11.25a.75.75 0 00-1.5 0v2.5c0 .69.56 1.25 1.25 1.25h10.5A1.25 1.25 0 0015 13.75v-2.5a.75.75 0 00-1.5 0v2.5H3.5v-2.5z"/>
@@ -381,13 +381,13 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 										<svg class="archivio-post-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
 											<path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
 										</svg>
-										<span class="archivio-post-badge-text"><?php _e( 'Unverified', 'archiviomd' ); ?></span>
+										<span class="archivio-post-badge-text"><?php esc_html_e( 'Unverified', 'archiviomd' ); ?></span>
 									</span>
 									<span style="margin-left:10px;" class="archivio-post-badge archivio-post-badge-not_signed">
 										<svg class="archivio-post-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
 											<path d="M8 2a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 018 2zM8 10a1 1 0 100 2 1 1 0 000-2z"/>
 										</svg>
-										<span class="archivio-post-badge-text"><?php _e( 'Not Signed', 'archiviomd' ); ?></span>
+										<span class="archivio-post-badge-text"><?php esc_html_e( 'Not Signed', 'archiviomd' ); ?></span>
 									</span>
 								</div>
 							</div>
@@ -398,7 +398,7 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 
 			<p class="submit">
 				<button type="submit" class="button button-primary" id="save-settings-btn">
-					<?php _e( 'Save Settings', 'archiviomd' ); ?>
+					<?php esc_html_e( 'Save Settings', 'archiviomd' ); ?>
 				</button>
 				<span class="archivio-post-save-status" style="margin-left:10px;"></span>
 			</p>
@@ -407,27 +407,27 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 		<hr style="margin:40px 0;">
 
 		<!-- Troubleshooting -->
-		<h2><?php _e( 'Troubleshooting', 'archiviomd' ); ?></h2>
+		<h2><?php esc_html_e( 'Troubleshooting', 'archiviomd' ); ?></h2>
 		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;margin-bottom:20px;">
-			<h3><?php _e( 'Enable All Settings', 'archiviomd' ); ?></h3>
-			<p><?php _e( 'Click this button to enable Auto-Generate and all badge display options.', 'archiviomd' ); ?></p>
+			<h3><?php esc_html_e( 'Enable All Settings', 'archiviomd' ); ?></h3>
+			<p><?php esc_html_e( 'Click this button to enable Auto-Generate and all badge display options.', 'archiviomd' ); ?></p>
 			<p style="font-size:12px;color:#666;">
 				<?php 
 				$current_value = get_option('archivio_post_auto_generate');
-				printf( __( 'Current Auto-Generate value: %s', 'archiviomd' ), '<code>' . var_export($current_value, true) . '</code>' );
+				printf( '<code>%s</code>', esc_html( var_export( $current_value, true ) ) );
 				?>
 			</p>
 			<button type="button" id="fix-settings-btn" class="button button-secondary">
-				<?php _e( 'Enable All Settings', 'archiviomd' ); ?>
+				<?php esc_html_e( 'Enable All Settings', 'archiviomd' ); ?>
 			</button>
 			<span class="fix-settings-status" style="margin-left:10px;"></span>
 		</div>
 		
 		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;">
-			<h3><?php _e( 'Recreate Audit Log Table', 'archiviomd' ); ?></h3>
-			<p><?php _e( 'If the audit log is not working, recreate the database table. Existing entries are preserved.', 'archiviomd' ); ?></p>
+			<h3><?php esc_html_e( 'Recreate Audit Log Table', 'archiviomd' ); ?></h3>
+			<p><?php esc_html_e( 'If the audit log is not working, recreate the database table. Existing entries are preserved.', 'archiviomd' ); ?></p>
 			<button type="button" id="recreate-table-btn" class="button button-secondary">
-				<?php _e( 'Recreate Database Table', 'archiviomd' ); ?>
+				<?php esc_html_e( 'Recreate Database Table', 'archiviomd' ); ?>
 			</button>
 			<span class="recreate-table-status" style="margin-left:10px;"></span>
 		</div>
@@ -435,23 +435,23 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 		<hr style="margin:40px 0;">
 
 		<!-- How It Works -->
-		<h2><?php _e( 'How It Works', 'archiviomd' ); ?></h2>
+		<h2><?php esc_html_e( 'How It Works', 'archiviomd' ); ?></h2>
 		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;">
 			<ol style="line-height:2;">
-				<li><strong><?php _e( 'Content Canonicalization:', 'archiviomd' ); ?></strong>
-					<?php _e( 'Post content is normalized (LF line endings, trimmed whitespace) and prefixed with post_id and author_id.', 'archiviomd' ); ?>
+				<li><strong><?php esc_html_e( 'Content Canonicalization:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'Post content is normalized (LF line endings, trimmed whitespace) and prefixed with post_id and author_id.', 'archiviomd' ); ?>
 				</li>
-				<li><strong><?php _e( 'Hash Generation:', 'archiviomd' ); ?></strong>
-					<?php _e( 'A hash is computed using the selected algorithm in Standard or HMAC mode. Both the algorithm and mode are stored alongside the hash.', 'archiviomd' ); ?>
+				<li><strong><?php esc_html_e( 'Hash Generation:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'A hash is computed using the selected algorithm in Standard or HMAC mode. Both the algorithm and mode are stored alongside the hash.', 'archiviomd' ); ?>
 				</li>
-				<li><strong><?php _e( 'Storage:', 'archiviomd' ); ?></strong>
-					<?php _e( 'Standard hashes are packed as "algo:hex". HMAC hashes are packed as "hmac-algo:hex". Author ID and timestamp are saved in post meta and the audit log.', 'archiviomd' ); ?>
+				<li><strong><?php esc_html_e( 'Storage:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'Standard hashes are packed as "algo:hex". HMAC hashes are packed as "hmac-algo:hex". Author ID and timestamp are saved in post meta and the audit log.', 'archiviomd' ); ?>
 				</li>
-				<li><strong><?php _e( 'Verification:', 'archiviomd' ); ?></strong>
-					<?php _e( 'The stored packed string determines the algorithm and mode for re-computation. Standard hashes verify with hash(); HMAC hashes verify with hash_hmac() and the configured key. Legacy SHA-256 bare-hex hashes always verify correctly.', 'archiviomd' ); ?>
+				<li><strong><?php esc_html_e( 'Verification:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'The stored packed string determines the algorithm and mode for re-computation. Standard hashes verify with hash(); HMAC hashes verify with hash_hmac() and the configured key. Legacy SHA-256 bare-hex hashes always verify correctly.', 'archiviomd' ); ?>
 				</li>
-				<li><strong><?php _e( 'Badge Display:', 'archiviomd' ); ?></strong>
-					<?php _e( 'The badge shows "Verified" (green), "Unverified" (red), or "Not Signed" (gray).', 'archiviomd' ); ?>
+				<li><strong><?php esc_html_e( 'Badge Display:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'The badge shows "Verified" (green), "Unverified" (red), or "Not Signed" (gray).', 'archiviomd' ); ?>
 				</li>
 			</ol>
 		</div>
@@ -463,27 +463,27 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 	     ================================================================ -->
 	<div class="archivio-post-tab-content">
 		<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-			<h2 style="margin:0;"><?php _e( 'Audit Log', 'archiviomd' ); ?></h2>
+			<h2 style="margin:0;"><?php esc_html_e( 'Audit Log', 'archiviomd' ); ?></h2>
 			<div style="display:flex;gap:8px;align-items:center;">
 			<button type="button" id="refresh-audit-log" class="button button-secondary">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;margin-right:5px;"></span>
-				<?php _e( 'Refresh', 'archiviomd' ); ?>
+				<?php esc_html_e( 'Refresh', 'archiviomd' ); ?>
 			</button>
 			<button type="button" id="export-audit-csv" class="button button-secondary">
 				<span class="dashicons dashicons-download" style="vertical-align:middle;margin-right:5px;"></span>
-				<?php _e( 'Export to CSV', 'archiviomd' ); ?>
+				<?php esc_html_e( 'Export to CSV', 'archiviomd' ); ?>
 			</button>
 		</div>
 		</div>
 
 		<p class="description">
-			<?php _e( 'All hash generation and unverified events are logged here. The Algorithm and Mode columns show how each hash was produced.', 'archiviomd' ); ?>
+			<?php esc_html_e( 'All hash generation and unverified events are logged here. The Algorithm and Mode columns show how each hash was produced.', 'archiviomd' ); ?>
 		</p>
 
 		<div id="audit-log-container">
 			<div class="audit-log-loading" style="text-align:center;padding:40px;">
 				<span class="spinner is-active" style="float:none;margin:0 auto;"></span>
-				<p><?php _e( 'Loading audit logs...', 'archiviomd' ); ?></p>
+				<p><?php esc_html_e( 'Loading audit logs...', 'archiviomd' ); ?></p>
 			</div>
 		</div>
 		<div id="audit-log-pagination" style="margin-top:20px;text-align:center;"></div>
@@ -494,58 +494,58 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 	     HELP TAB
 	     ================================================================ -->
 	<div class="archivio-post-tab-content">
-		<h2><?php _e( 'Help & Documentation', 'archiviomd' ); ?></h2>
+		<h2><?php esc_html_e( 'Help & Documentation', 'archiviomd' ); ?></h2>
 
 		<div class="archivio-post-help-section" style="background:#fff8e5;padding:20px;border-left:4px solid #dba617;border-radius:4px;margin-bottom:30px;">
-			<h3 style="margin-top:0;border:none;"><?php _e( '⚠️ Important: This is NOT PGP/GPG Signing', 'archiviomd' ); ?></h3>
-			<p><strong><?php _e( 'This feature uses cryptographic hashing ONLY.', 'archiviomd' ); ?></strong></p>
-			<p><?php _e( 'It does NOT use PGP, GPG, or any asymmetric cryptographic signing. HMAC mode adds a shared-secret keyed integrity check — it is not a digital signature and does not involve public/private key pairs.', 'archiviomd' ); ?></p>
+			<h3 style="margin-top:0;border:none;"><?php esc_html_e( '⚠️ Important: This is NOT PGP/GPG Signing', 'archiviomd' ); ?></h3>
+			<p><strong><?php esc_html_e( 'This feature uses cryptographic hashing ONLY.', 'archiviomd' ); ?></strong></p>
+			<p><?php esc_html_e( 'It does NOT use PGP, GPG, or any asymmetric cryptographic signing. HMAC mode adds a shared-secret keyed integrity check — it is not a digital signature and does not involve public/private key pairs.', 'archiviomd' ); ?></p>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php _e( 'HMAC Integrity Mode', 'archiviomd' ); ?></h3>
-			<p><?php _e( 'HMAC (Hash-based Message Authentication Code) binds a secret key to the hash. This means only someone with the ARCHIVIOMD_HMAC_KEY secret can produce or verify the hash — a standard hash can be independently computed by anyone.', 'archiviomd' ); ?></p>
-			<h4><?php _e( 'Setup', 'archiviomd' ); ?></h4>
+			<h3><?php esc_html_e( 'HMAC Integrity Mode', 'archiviomd' ); ?></h3>
+			<p><?php esc_html_e( 'HMAC (Hash-based Message Authentication Code) binds a secret key to the hash. This means only someone with the ARCHIVIOMD_HMAC_KEY secret can produce or verify the hash — a standard hash can be independently computed by anyone.', 'archiviomd' ); ?></p>
+			<h4><?php esc_html_e( 'Setup', 'archiviomd' ); ?></h4>
 			<pre style="background:#f5f5f5;padding:15px;border-radius:4px;overflow-x:auto;"><code>// In wp-config.php, before "stop editing":
 define( '<?php echo esc_html( MDSM_Hash_Helper::HMAC_KEY_CONSTANT ); ?>', 'your-random-secret-at-least-32-chars' );
 
 // Generate a strong key on the command line:
 openssl rand -base64 48</code></pre>
-			<p><?php _e( 'The key is never stored in the database. Only the boolean toggle (on/off) is saved as a WordPress option.', 'archiviomd' ); ?></p>
+			<p><?php esc_html_e( 'The key is never stored in the database. Only the boolean toggle (on/off) is saved as a WordPress option.', 'archiviomd' ); ?></p>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php esc_html_e( 'Choosing an Algorithm', 'archivio-md-build' ); ?></h3>
-			<h4 style="margin-top:15px;margin-bottom:10px;font-size:13px;font-weight:600;"><?php esc_html_e( 'Standard Algorithms (Recommended for Production)', 'archivio-md-build' ); ?></h4>
+			<h3><?php esc_html_e( 'Choosing an Algorithm', 'archiviomd' ); ?></h3>
+			<h4 style="margin-top:15px;margin-bottom:10px;font-size:13px;font-weight:600;"><?php esc_html_e( 'Standard Algorithms (Recommended for Production)', 'archiviomd' ); ?></h4>
 			<ul style="line-height:2;">
-				<li><strong>SHA-256</strong> – <?php esc_html_e( 'Default. 256-bit digest, 64 hex chars. Universally supported.', 'archivio-md-build' ); ?></li>
-				<li><strong>SHA-512</strong> – <?php esc_html_e( '512-bit digest, 128 hex chars. Stronger collision resistance.', 'archivio-md-build' ); ?></li>
-				<li><strong>SHA3-256</strong> – <?php esc_html_e( '256-bit SHA-3 (Keccak sponge), 64 hex chars. PHP 7.1+.', 'archivio-md-build' ); ?></li>
-				<li><strong>SHA3-512</strong> – <?php esc_html_e( '512-bit SHA-3 (Keccak sponge), 128 hex chars. PHP 7.1+.', 'archivio-md-build' ); ?></li>
-				<li><strong>BLAKE2b</strong> – <?php esc_html_e( '512-bit digest, 128 hex chars. Modern, fast. PHP 7.2+ with OpenSSL ≥ 1.1.1.', 'archivio-md-build' ); ?></li>
+				<li><strong>SHA-256</strong> – <?php esc_html_e( 'Default. 256-bit digest, 64 hex chars. Universally supported.', 'archiviomd' ); ?></li>
+				<li><strong>SHA-512</strong> – <?php esc_html_e( '512-bit digest, 128 hex chars. Stronger collision resistance.', 'archiviomd' ); ?></li>
+				<li><strong>SHA3-256</strong> – <?php esc_html_e( '256-bit SHA-3 (Keccak sponge), 64 hex chars. PHP 7.1+.', 'archiviomd' ); ?></li>
+				<li><strong>SHA3-512</strong> – <?php esc_html_e( '512-bit SHA-3 (Keccak sponge), 128 hex chars. PHP 7.1+.', 'archiviomd' ); ?></li>
+				<li><strong>BLAKE2b</strong> – <?php esc_html_e( '512-bit digest, 128 hex chars. Modern, fast. PHP 7.2+ with OpenSSL ≥ 1.1.1.', 'archiviomd' ); ?></li>
 			</ul>
-			<h4 style="margin-top:15px;margin-bottom:10px;font-size:13px;font-weight:600;"><?php esc_html_e( 'Experimental / Advanced Algorithms', 'archivio-md-build' ); ?></h4>
+			<h4 style="margin-top:15px;margin-bottom:10px;font-size:13px;font-weight:600;"><?php esc_html_e( 'Experimental / Advanced Algorithms', 'archiviomd' ); ?></h4>
 			<p style="background:#fff8e5;padding:10px;border-left:3px solid #dba617;border-radius:3px;font-size:12px;">
-				<strong><?php esc_html_e( 'Warning:', 'archivio-md-build' ); ?></strong>
-				<?php esc_html_e( 'These algorithms may not be available on all PHP builds and will automatically fall back to SHA-256 or BLAKE2b if unavailable.', 'archivio-md-build' ); ?>
+				<strong><?php esc_html_e( 'Warning:', 'archiviomd' ); ?></strong>
+				<?php esc_html_e( 'These algorithms may not be available on all PHP builds and will automatically fall back to SHA-256 or BLAKE2b if unavailable.', 'archiviomd' ); ?>
 			</p>
 			<ul style="line-height:2;">
-				<li><strong>BLAKE3</strong> – <?php esc_html_e( '256-bit output. Extremely fast, parallel hashing. PHP 8.1+ or pure-PHP fallback.', 'archivio-md-build' ); ?></li>
-				<li><strong>SHAKE128</strong> – <?php esc_html_e( 'SHA-3 XOF with 256-bit output. Variable-length output. PHP 7.1+ native or fallback.', 'archivio-md-build' ); ?></li>
-				<li><strong>SHAKE256</strong> – <?php esc_html_e( 'SHA-3 XOF with 512-bit output. Variable-length output. PHP 7.1+ native or fallback.', 'archivio-md-build' ); ?></li>
+				<li><strong>BLAKE3</strong> – <?php esc_html_e( '256-bit output. Extremely fast, parallel hashing. PHP 8.1+ or pure-PHP fallback.', 'archiviomd' ); ?></li>
+				<li><strong>SHAKE128</strong> – <?php esc_html_e( 'SHA-3 XOF with 256-bit output. Variable-length output. PHP 7.1+ native or fallback.', 'archiviomd' ); ?></li>
+				<li><strong>SHAKE256</strong> – <?php esc_html_e( 'SHA-3 XOF with 512-bit output. Variable-length output. PHP 7.1+ native or fallback.', 'archiviomd' ); ?></li>
 			</ul>
-			<p><?php esc_html_e( 'Changing the algorithm only affects new hashes. Old hashes verify with the algorithm used when they were created.', 'archivio-md-build' ); ?></p>
+			<p><?php esc_html_e( 'Changing the algorithm only affects new hashes. Old hashes verify with the algorithm used when they were created.', 'archiviomd' ); ?></p>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php _e( 'Shortcode Usage', 'archiviomd' ); ?></h3>
+			<h3><?php esc_html_e( 'Shortcode Usage', 'archiviomd' ); ?></h3>
 			<pre style="background:#f5f5f5;padding:15px;border-radius:4px;overflow-x:auto;"><code>[hash_verify]
 [hash_verify post_id="42"]</code></pre>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php _e( 'Offline Verification', 'archiviomd' ); ?></h3>
-			<p><?php _e( 'Standard mode – run the command for the algorithm shown in the verification file:', 'archiviomd' ); ?></p>
+			<h3><?php esc_html_e( 'Offline Verification', 'archiviomd' ); ?></h3>
+			<p><?php esc_html_e( 'Standard mode – run the command for the algorithm shown in the verification file:', 'archiviomd' ); ?></p>
 			<pre style="background:#f5f5f5;padding:15px;border-radius:4px;overflow-x:auto;"><code># SHA-256
 echo -n "post_id:123\nauthor_id:1\ncontent:\nYour content" | sha256sum
 
@@ -560,29 +560,29 @@ echo -n "..." | openssl dgst -sha3-512
 
 # BLAKE2b
 echo -n "..." | b2sum -l 512</code></pre>
-			<p><?php _e( 'HMAC mode – the verification file includes the openssl hmac command with a placeholder for your secret key:', 'archiviomd' ); ?></p>
+			<p><?php esc_html_e( 'HMAC mode – the verification file includes the openssl hmac command with a placeholder for your secret key:', 'archiviomd' ); ?></p>
 			<pre style="background:#f5f5f5;padding:15px;border-radius:4px;overflow-x:auto;"><code>echo -n "..." | openssl dgst -sha256 -hmac "YOUR_SECRET_KEY"</code></pre>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php _e( 'Badge Status Meanings', 'archiviomd' ); ?></h3>
+			<h3><?php esc_html_e( 'Badge Status Meanings', 'archiviomd' ); ?></h3>
 			<ul style="line-height:2;">
-				<li><strong style="color:#0a7537;"><?php _e( 'Verified:', 'archiviomd' ); ?></strong>
-					<?php _e( 'Current content matches the stored hash.', 'archiviomd' ); ?></li>
-				<li><strong style="color:#d73a49;"><?php _e( 'Unverified:', 'archiviomd' ); ?></strong>
-					<?php _e( 'Content has changed since hash generation.', 'archiviomd' ); ?></li>
-				<li><strong style="color:#6a737d;"><?php _e( 'Not Signed:', 'archiviomd' ); ?></strong>
-					<?php _e( 'No hash generated yet.', 'archiviomd' ); ?></li>
+				<li><strong style="color:#0a7537;"><?php esc_html_e( 'Verified:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'Current content matches the stored hash.', 'archiviomd' ); ?></li>
+				<li><strong style="color:#d73a49;"><?php esc_html_e( 'Unverified:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'Content has changed since hash generation.', 'archiviomd' ); ?></li>
+				<li><strong style="color:#6a737d;"><?php esc_html_e( 'Not Signed:', 'archiviomd' ); ?></strong>
+					<?php esc_html_e( 'No hash generated yet.', 'archiviomd' ); ?></li>
 			</ul>
 		</div>
 
 		<div class="archivio-post-help-section">
-			<h3><?php _e( 'Backward Compatibility', 'archiviomd' ); ?></h3>
-			<p><?php _e( 'Hashes generated before v1.3.0 are stored as plain SHA-256 hex strings. Hashes from v1.3.0 are stored as "algo:hex". Hashes from v1.4.0 HMAC mode are stored as "hmac-algo:hex". All three formats coexist and verify correctly without any migration.', 'archiviomd' ); ?></p>
+			<h3><?php esc_html_e( 'Backward Compatibility', 'archiviomd' ); ?></h3>
+			<p><?php esc_html_e( 'Hashes generated before v1.3.0 are stored as plain SHA-256 hex strings. Hashes from v1.3.0 are stored as "algo:hex". Hashes from v1.4.0 HMAC mode are stored as "hmac-algo:hex". All three formats coexist and verify correctly without any migration.', 'archiviomd' ); ?></p>
 		</div>
 
 		<div class="archivio-post-help-section" style="background:#e7f3ff;padding:20px;border-left:4px solid #2271b1;border-radius:4px;">
-			<h3><?php _e( 'Need More Help?', 'archiviomd' ); ?></h3>
+			<h3><?php esc_html_e( 'Need More Help?', 'archiviomd' ); ?></h3>
 			<p><a href="https://mountainviewprovisions.com/ArchivioMD" target="_blank" rel="noopener">https://mountainviewprovisions.com/ArchivioMD</a></p>
 		</div>
 	</div>
@@ -591,50 +591,20 @@ echo -n "..." | b2sum -l 512</code></pre>
 	</div><!-- .archivio-post-content -->
 </div><!-- .wrap -->
 
-<style>
-.archivio-post-admin .archivio-post-content { margin-top: 20px; }
-.archivio-post-tab-content {
-	background: #fff;
-	padding: 20px;
-	border: 1px solid #ccd0d4;
-	border-radius: 4px;
-}
-.archivio-post-help-section { margin-bottom: 30px; }
-.archivio-post-help-section h3 {
-	margin-top: 0;
-	padding-bottom: 10px;
-	border-bottom: 2px solid #2271b1;
-}
-.archivio-post-help-section h4 { margin-top: 20px; color: #2271b1; }
+<?php wp_add_inline_style( 'archivio-post-admin', '.archivio-post-admin .archivio-post-content { margin-top: 20px; }\n.archivio-post-tab-content {\n\tbackground: #fff;\n\tpadding: 20px;\n\tborder: 1px solid #ccd0d4;\n\tborder-radius: 4px;\n}\n.archivio-post-help-section { margin-bottom: 30px; }\n.archivio-post-help-section h3 {\n\tmargin-top: 0;\n\tpadding-bottom: 10px;\n\tborder-bottom: 2px solid #2271b1;\n}\n.archivio-post-help-section h4 { margin-top: 20px; color: #2271b1; }\n\n#audit-log-table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n#audit-log-table th,\n#audit-log-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n#audit-log-table th { background: #f9f9f9; font-weight: 600; color: #1d2327; }\n#audit-log-table tr:hover { background: #f9f9f9; }\n\n.audit-log-event-generated { color: #0a7537; }\n.audit-log-event-verified   { color: #2271b1; }\n.audit-log-event-unverified { color: #d73a49; }\n.audit-log-hash  { font-family: monospace; font-size: 12px; word-break: break-all; }\n.audit-log-algo  { font-family: monospace; font-size: 11px; }\n.audit-log-mode-hmac     { color: #7c3aed; font-weight: 600; }\n.audit-log-mode-standard { color: #646970; }\n#audit-log-pagination button { margin: 0 5px; }\n.audit-log-type-post  { color: #2271b1; font-size: 11px; font-weight: 600; }\n.audit-log-type-page  { color: #7c3aed; font-size: 11px; font-weight: 600; }' ); ?>
 
-#audit-log-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-#audit-log-table th,
-#audit-log-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-#audit-log-table th { background: #f9f9f9; font-weight: 600; color: #1d2327; }
-#audit-log-table tr:hover { background: #f9f9f9; }
-
-.audit-log-event-generated { color: #0a7537; }
-.audit-log-event-verified   { color: #2271b1; }
-.audit-log-event-unverified { color: #d73a49; }
-.audit-log-hash  { font-family: monospace; font-size: 12px; word-break: break-all; }
-.audit-log-algo  { font-family: monospace; font-size: 11px; }
-.audit-log-mode-hmac     { color: #7c3aed; font-weight: 600; }
-.audit-log-mode-standard { color: #646970; }
-#audit-log-pagination button { margin: 0 5px; }
-.audit-log-type-post  { color: #2271b1; font-size: 11px; font-weight: 600; }
-.audit-log-type-page  { color: #7c3aed; font-size: 11px; font-weight: 600; }
-</style>
-
-<script>
+<?php
+ob_start();
+?>
 jQuery(document).ready(function($) {
 
 	// ── Force checkbox states to match stored values ────────────────────
 	// Fix for issue where checkboxes appear checked but aren't actually checked
 	var checkboxStates = {
-		'auto-generate': <?php echo $auto_generate ? 'true' : 'false'; ?>,
-		'show-badge': <?php echo $show_badge ? 'true' : 'false'; ?>,
-		'show-badge-posts': <?php echo $show_badge_posts ? 'true' : 'false'; ?>,
-		'show-badge-pages': <?php echo $show_badge_pages ? 'true' : 'false'; ?>
+		'auto-generate': archivioPostData.checkboxStates['auto-generate'],
+		'show-badge': archivioPostData.checkboxStates['show-badge'],
+		'show-badge-posts': archivioPostData.checkboxStates['show-badge-posts'],
+		'show-badge-pages': archivioPostData.checkboxStates['show-badge-pages']
 	};
 	
 	$.each(checkboxStates, function(id, shouldBeChecked) {
@@ -877,4 +847,7 @@ jQuery(document).ready(function($) {
 	});
 
 });
-</script>
+<?php
+$_archivio_inline_js = ob_get_clean();
+wp_add_inline_script( 'archivio-post-admin', $_archivio_inline_js );
+?>

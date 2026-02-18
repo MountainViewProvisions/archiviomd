@@ -54,11 +54,25 @@ class MDSM_Compliance_Tools {
     /**
      * Add Tools submenu
      */
+    /**
+     * Enqueue compliance page assets
+     */
+    public function enqueue_compliance_assets( $hook ) {
+        if ( 'tools_page_archivio-md-compliance' !== $hook ) {
+            return;
+        }
+        // Styles and scripts are added via wp_add_inline_style/script from the page template
+        wp_register_style( 'mdsm-compliance-tools', false, array(), MDSM_VERSION );
+        wp_enqueue_style( 'mdsm-compliance-tools' );
+        wp_register_script( 'mdsm-compliance-tools-js', false, array( 'jquery' ), MDSM_VERSION, true );
+        wp_enqueue_script( 'mdsm-compliance-tools-js' );
+    }
+    
     public function add_tools_menu() {
         add_submenu_page(
             'archiviomd',
-            __('ArchivioMD Compliance', 'archivio-md'),
-            __('Metadata Engine', 'archivio-md'),
+            __('ArchivioMD Compliance', 'archiviomd'),
+            __('Metadata Engine', 'archiviomd'),
             'manage_options',
             'archivio-md-compliance',
             array($this, 'render_tools_page')
@@ -98,16 +112,12 @@ class MDSM_Compliance_Tools {
             Regular database backups are required for complete data protection. 
             <a href="<?php echo admin_url('tools.php?page=archivio-md-compliance'); ?>">View compliance tools</a></p>
         </div>
-        <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('#mdsm-backup-notice').on('click', '.notice-dismiss', function() {
-                $.post(ajaxurl, {
-                    action: 'mdsm_dismiss_backup_notice',
-                    nonce: '<?php echo wp_create_nonce('mdsm_dismiss_backup_notice'); ?>'
-                });
-            });
-        });
-        </script>
+        <?php
+        wp_add_inline_script(
+            'mdsm-admin-scripts',
+            'jQuery(document).ready(function($){$("#mdsm-backup-notice").on("click",".notice-dismiss",function(){$.post(ajaxurl,{action:"mdsm_dismiss_backup_notice",nonce:"' . esc_js( wp_create_nonce('mdsm_dismiss_backup_notice') ) . '"});});});'
+        );
+        ?>
         <?php
     }
     
@@ -255,7 +265,7 @@ class MDSM_Compliance_Tools {
      */
     public function ajax_download_csv() {
         $filename = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
-        $nonce = isset($_GET['nonce']) ? $_GET['nonce'] : '';
+        $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
         
         if (empty($filename) || !wp_verify_nonce($nonce, 'mdsm_download_csv_' . $filename)) {
             wp_die('Invalid request');
@@ -500,7 +510,7 @@ class MDSM_Compliance_Tools {
      */
     public function ajax_download_backup() {
         $filename = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
-        $nonce = isset($_GET['nonce']) ? $_GET['nonce'] : '';
+        $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
         
         if (empty($filename) || !wp_verify_nonce($nonce, 'mdsm_download_backup_' . $filename)) {
             wp_die('Invalid request');
@@ -560,8 +570,20 @@ class MDSM_Compliance_Tools {
      */
     private function analyze_backup($uploaded_file) {
         // Validate uploaded file
-        if ($uploaded_file['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception('Upload failed');
+        if ( $uploaded_file['error'] !== UPLOAD_ERR_OK ) {
+            throw new Exception( 'Upload failed' );
+        }
+        
+        if ( ! is_uploaded_file( $uploaded_file['tmp_name'] ) ) {
+            throw new Exception( 'Invalid file upload' );
+        }
+        
+        // Validate MIME type for ZIP
+        $finfo = new finfo( FILEINFO_MIME_TYPE );
+        $mime  = $finfo->file( $uploaded_file['tmp_name'] );
+        $allowed_mime = array( 'application/zip', 'application/x-zip-compressed', 'application/octet-stream' );
+        if ( ! in_array( $mime, $allowed_mime, true ) ) {
+            throw new Exception( 'Uploaded file is not a valid ZIP archive' );
         }
         
         // Extract ZIP to temp directory
@@ -891,7 +913,7 @@ class MDSM_Compliance_Tools {
         }
         
         // Get cleanup preference (sanitize as boolean)
-        $cleanup_enabled = isset($_POST['cleanup_enabled']) && $_POST['cleanup_enabled'] === '1';
+        $cleanup_enabled = isset( $_POST['cleanup_enabled'] ) && sanitize_text_field( wp_unslash( $_POST['cleanup_enabled'] ) ) === '1';
         
         // Save the opt-in preference
         $result = update_option('mdsm_uninstall_cleanup_enabled', $cleanup_enabled);

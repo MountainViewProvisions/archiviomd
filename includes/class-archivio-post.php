@@ -105,8 +105,8 @@ class MDSM_Archivio_Post {
 	public function add_admin_menu() {
 		add_submenu_page(
 			'archiviomd',
-			__( 'Cryptographic Verification', 'archivio-md-build' ),
-			__( 'Cryptographic Verification', 'archivio-md-build' ),
+			__( 'Cryptographic Verification', 'archiviomd' ),
+			__( 'Cryptographic Verification', 'archiviomd' ),
 			'manage_options',
 			'archivio-post',
 			array( $this, 'render_admin_page' )
@@ -135,13 +135,19 @@ class MDSM_Archivio_Post {
 		);
 
 		wp_localize_script( 'archivio-post-admin', 'archivioPostData', array(
-			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-			'nonce'   => wp_create_nonce( 'archivio_post_nonce' ),
+			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+			'nonce'          => wp_create_nonce( 'archivio_post_nonce' ),
+			'checkboxStates' => array(
+				'auto-generate'   => (bool) get_option( 'archivio_post_auto_generate', false ),
+				'show-badge'      => (bool) get_option( 'archivio_post_show_badge', false ),
+				'show-badge-posts'=> (bool) get_option( 'archivio_post_show_badge_posts', false ),
+				'show-badge-pages'=> (bool) get_option( 'archivio_post_show_badge_pages', false ),
+			),
 			'strings' => array(
-				'saving'  => __( 'Saving...', 'archivio-md-build' ),
-				'saved'   => __( 'Settings saved successfully!', 'archivio-md-build' ),
-				'error'   => __( 'Error occurred. Please try again.', 'archivio-md-build' ),
-				'loading' => __( 'Loading...', 'archivio-md-build' ),
+				'saving'  => __( 'Saving...', 'archiviomd' ),
+				'saved'   => __( 'Settings saved successfully!', 'archiviomd' ),
+				'error'   => __( 'Error occurred. Please try again.', 'archiviomd' ),
+				'loading' => __( 'Loading...', 'archiviomd' ),
 			),
 		) );
 	}
@@ -170,8 +176,8 @@ class MDSM_Archivio_Post {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'archivio_post_frontend_nonce' ),
 			'strings' => array(
-				'downloading' => __( 'Downloading...', 'archivio-md-build' ),
-				'error'       => __( 'Error downloading verification file.', 'archivio-md-build' ),
+				'downloading' => __( 'Downloading...', 'archiviomd' ),
+				'error'       => __( 'Error downloading verification file.', 'archiviomd' ),
 			),
 		) );
 	}
@@ -214,10 +220,10 @@ class MDSM_Archivio_Post {
 
 		printf(
 			'<div class="notice notice-warning is-dismissible"><p><strong>%s</strong> %s</p></div>',
-			esc_html__( 'Algorithm Fallback:', 'archivio-md-build' ),
+			esc_html__( 'Algorithm Fallback:', 'archiviomd' ),
 			sprintf(
 				/* translators: 1: requested algorithm name, 2: fallback algorithm name, 3: post ID */
-				esc_html__( 'The requested algorithm %1$s is not available on this server. Hash for post #%3$d was generated using fallback algorithm %2$s instead.', 'archivio-md-build' ),
+				esc_html__( 'The requested algorithm %1$s is not available on this server. Hash for post #%3$d was generated using fallback algorithm %2$s instead.', 'archiviomd' ),
 				'<code>' . esc_html( $requested_label ) . '</code>',
 				'<code>' . esc_html( $fallback_label ) . '</code>',
 				esc_html( $fallback_data['post_id'] )
@@ -229,7 +235,7 @@ class MDSM_Archivio_Post {
 
 	public function render_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'archivio-md-build' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'archiviomd' ) );
 		}
 
 		global $wpdb;
@@ -431,7 +437,7 @@ class MDSM_Archivio_Post {
 		$post_types = get_post_types( array( 'public' => true ), 'names' );
 		add_meta_box(
 			'archivio_post_badge',
-			__( 'ArchivioMD Badge Settings', 'archivio-md-build' ),
+			__( 'ArchivioMD Badge Settings', 'archiviomd' ),
 			array( $this, 'render_badge_meta_box' ),
 			$post_types,
 			'side',
@@ -449,18 +455,18 @@ class MDSM_Archivio_Post {
 		<p>
 			<label>
 				<input type="checkbox" name="archivio_post_show_badge" value="1" <?php checked( $show_badge, '1' ); ?> />
-				<?php esc_html_e( 'Also show badge below content', 'archivio-md-build' ); ?>
+				<?php esc_html_e( 'Also show badge below content', 'archiviomd' ); ?>
 			</label>
 		</p>
 		<p>
 			<label>
 				<input type="checkbox" name="archivio_post_show_title_badge" value="0" <?php checked( $show_title_badge, '0' ); ?> />
-				<?php esc_html_e( 'Hide badge from title', 'archivio-md-build' ); ?>
+				<?php esc_html_e( 'Hide badge from title', 'archiviomd' ); ?>
 			</label>
 		</p>
 		<p>
 			<label for="archivio_post_badge_override">
-				<?php esc_html_e( 'Custom badge text (optional):', 'archivio-md-build' ); ?>
+				<?php esc_html_e( 'Custom badge text (optional):', 'archiviomd' ); ?>
 			</label>
 			<input type="text" id="archivio_post_badge_override" name="archivio_post_badge_override" value="<?php echo esc_attr( $badge_override ); ?>" style="width:100%;" />
 		</p>
@@ -485,7 +491,7 @@ class MDSM_Archivio_Post {
 			return;
 		}
 
-		$show_badge       = isset( $_POST['archivio_post_show_badge'] )       ? '1' : '';
+		$show_badge       = isset( $_POST['archivio_post_show_badge'] ) ? '1' : '';
 		$show_title_badge = isset( $_POST['archivio_post_show_title_badge'] ) ? '1' : '';
 		$badge_override   = isset( $_POST['archivio_post_badge_override'] )   ? sanitize_text_field( wp_unslash( $_POST['archivio_post_badge_override'] ) ) : '';
 
@@ -566,7 +572,7 @@ class MDSM_Archivio_Post {
 
 		// No hash stored — show "Not Signed" pill
 		if ( empty( $stored_hash ) ) {
-			$label = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Not Signed', 'archivio-md-build' );
+			$label = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Not Signed', 'archiviomd' );
 			return '<span class="archivio-post-badge archivio-post-badge-' . esc_attr( $context ) . ' not-signed">'
 				. '<span class="apb-icon" aria-hidden="true">&#8212;</span>'
 				. '<span class="apb-text">' . $label . '</span>'
@@ -579,18 +585,18 @@ class MDSM_Archivio_Post {
 		if ( $verified ) {
 			$status_class = 'verified';
 			$icon         = '<svg class="apb-svg" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polyline points="2.5,8.5 6,12 13.5,4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-			$label        = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Verified', 'archivio-md-build' );
+			$label        = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Verified', 'archiviomd' );
 		} else {
 			$status_class = 'unverified';
 			$icon         = '<svg class="apb-svg" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
-			$label        = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Unverified', 'archivio-md-build' );
+			$label        = ! empty( $badge_override ) ? esc_html( $badge_override ) : esc_html__( 'Unverified', 'archiviomd' );
 		}
 
 		$html  = '<span class="archivio-post-badge archivio-post-badge-' . esc_attr( $context ) . ' ' . esc_attr( $status_class ) . '" data-post-id="' . esc_attr( $post_id ) . '">';
 		$html .= '<span class="apb-icon">' . $icon . '</span>';
 		$html .= '<span class="apb-text">' . $label . '</span>';
 		$html .= '<span class="apb-divider" aria-hidden="true"></span>';
-		$html .= '<button class="apb-download archivio-post-download" data-post-id="' . esc_attr( $post_id ) . '" title="' . esc_attr__( 'Download Verification File', 'archivio-md-build' ) . '" aria-label="' . esc_attr__( 'Download Verification File', 'archivio-md-build' ) . '">' . $dl_icon . '</button>';
+		$html .= '<button class="apb-download archivio-post-download" data-post-id="' . esc_attr( $post_id ) . '" title="' . esc_attr__( 'Download Verification File', 'archiviomd' ) . '" aria-label="' . esc_attr__( 'Download Verification File', 'archiviomd' ) . '">' . $dl_icon . '</button>';
 		$html .= '</span>';
 
 		return $html;
@@ -634,17 +640,17 @@ class MDSM_Archivio_Post {
 		$post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
 
 		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Invalid post ID', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Invalid post ID', 'archiviomd' ) ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Post not found', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Post not found', 'archiviomd' ) ) );
 		}
 
 		$stored_hash = get_post_meta( $post_id, '_archivio_post_hash', true );
 		if ( empty( $stored_hash ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'No hash found for this post', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'No hash found for this post', 'archiviomd' ) ) );
 		}
 
 		$verification = $this->verify_hash( $post_id );
@@ -703,7 +709,7 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 
 		global $wpdb;
@@ -733,13 +739,13 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 		
-		$auto_generate = isset( $_POST['auto_generate'] ) && $_POST['auto_generate'] === 'true';
-		$show_badge = isset( $_POST['show_badge'] ) && $_POST['show_badge'] === 'true';
-		$show_badge_posts = isset( $_POST['show_badge_posts'] ) && $_POST['show_badge_posts'] === 'true';
-		$show_badge_pages = isset( $_POST['show_badge_pages'] ) && $_POST['show_badge_pages'] === 'true';
+		$auto_generate = isset( $_POST['auto_generate'] ) && sanitize_text_field( wp_unslash( $_POST['auto_generate'] ) ) === 'true';
+		$show_badge = isset( $_POST['show_badge'] ) && sanitize_text_field( wp_unslash( $_POST['show_badge'] ) ) === 'true';
+		$show_badge_posts = isset( $_POST['show_badge_posts'] ) && sanitize_text_field( wp_unslash( $_POST['show_badge_posts'] ) ) === 'true';
+		$show_badge_pages = isset( $_POST['show_badge_pages'] ) && sanitize_text_field( wp_unslash( $_POST['show_badge_pages'] ) ) === 'true';
 
 		update_option( 'archivio_post_auto_generate',    $auto_generate );
 		update_option( 'archivio_post_show_badge',       $show_badge );
@@ -747,7 +753,7 @@ class MDSM_Archivio_Post {
 		update_option( 'archivio_post_show_badge_pages', $show_badge_pages );
 
 		wp_send_json_success( array(
-			'message' => esc_html__( 'Settings saved successfully!', 'archivio-md-build' ),
+			'message' => esc_html__( 'Settings saved successfully!', 'archiviomd' ),
 		) );
 	}
 
@@ -755,7 +761,7 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 
 		// Force all settings to true (enabled) when user clicks fix button
@@ -765,7 +771,7 @@ class MDSM_Archivio_Post {
 		update_option( 'archivio_post_show_badge_pages', true );
 
 		wp_send_json_success( array(
-			'message' => esc_html__( 'Settings enabled! Auto-Generate is now active.', 'archivio-md-build' ),
+			'message' => esc_html__( 'Settings enabled! Auto-Generate is now active.', 'archiviomd' ),
 		) );
 	}
 
@@ -773,13 +779,13 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 
 		$algorithm = isset( $_POST['algorithm'] ) ? sanitize_key( $_POST['algorithm'] ) : '';
 
 		if ( ! MDSM_Hash_Helper::set_active_algorithm( $algorithm ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Invalid algorithm selected.', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Invalid algorithm selected.', 'archiviomd' ) ) );
 		}
 
 		$warning = '';
@@ -790,23 +796,23 @@ class MDSM_Archivio_Post {
 
 		if ( ! $available ) {
 			if ( $algorithm === 'blake3' ) {
-				$warning = esc_html__( 'BLAKE3 is not natively available on this PHP build. Hashes will fall back to BLAKE2b or SHA-256.', 'archivio-md-build' );
+				$warning = esc_html__( 'BLAKE3 is not natively available on this PHP build. Hashes will fall back to BLAKE2b or SHA-256.', 'archiviomd' );
 			} elseif ( $algorithm === 'shake128' || $algorithm === 'shake256' ) {
-				$warning = esc_html__( 'SHAKE algorithm is not available on this PHP build. Hashes will fall back to BLAKE2b or SHA-256.', 'archivio-md-build' );
+				$warning = esc_html__( 'SHAKE algorithm is not available on this PHP build. Hashes will fall back to BLAKE2b or SHA-256.', 'archiviomd' );
 			} elseif ( $algorithm === 'blake2b' ) {
-				$warning = esc_html__( 'BLAKE2b is not available on this PHP build. New hashes will fall back to SHA-256 until the server is updated.', 'archivio-md-build' );
+				$warning = esc_html__( 'BLAKE2b is not available on this PHP build. New hashes will fall back to SHA-256 until the server is updated.', 'archiviomd' );
 			}
 		}
 
 		if ( $is_experimental && empty( $warning ) ) {
-			$warning = esc_html__( 'You have selected an experimental algorithm. It is natively available on this server, but may be slower than standard algorithms.', 'archivio-md-build' );
+			$warning = esc_html__( 'You have selected an experimental algorithm. It is natively available on this server, but may be slower than standard algorithms.', 'archiviomd' );
 		}
 
 		$active_label = MDSM_Hash_Helper::algorithm_label( MDSM_Hash_Helper::get_active_algorithm() );
 
 		wp_send_json_success( array(
 			/* translators: %s: algorithm name */
-			'message' => sprintf( esc_html__( 'Algorithm saved. New hashes will use %s.', 'archivio-md-build' ), $active_label ),
+			'message' => sprintf( esc_html__( 'Algorithm saved. New hashes will use %s.', 'archiviomd' ), $active_label ),
 			'warning' => $warning,
 		) );
 	}
@@ -815,16 +821,16 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 
-		$enable_hmac = isset( $_POST['hmac_mode'] ) && $_POST['hmac_mode'] === 'true';
+		$enable_hmac = isset( $_POST['hmac_mode'] ) && sanitize_text_field( wp_unslash( $_POST['hmac_mode'] ) ) === 'true';
 
 		if ( $enable_hmac && ! MDSM_Hash_Helper::is_hmac_key_defined() ) {
 			wp_send_json_error( array(
 				/* translators: %s: constant name */
 				'message' => sprintf(
-					esc_html__( 'Cannot enable HMAC Integrity Mode: the %s constant is not defined in wp-config.php.', 'archivio-md-build' ),
+					esc_html__( 'Cannot enable HMAC Integrity Mode: the %s constant is not defined in wp-config.php.', 'archiviomd' ),
 					'<code>' . esc_html( MDSM_Hash_Helper::HMAC_KEY_CONSTANT ) . '</code>'
 				),
 			) );
@@ -836,8 +842,8 @@ class MDSM_Archivio_Post {
 
 		wp_send_json_success( array(
 			'message'        => $enable_hmac
-				? esc_html__( 'HMAC Integrity Mode enabled. All new hashes will be HMAC-signed.', 'archivio-md-build' )
-				: esc_html__( 'HMAC Integrity Mode disabled. New hashes will use standard mode.', 'archivio-md-build' ),
+				? esc_html__( 'HMAC Integrity Mode enabled. All new hashes will be HMAC-signed.', 'archiviomd' )
+				: esc_html__( 'HMAC Integrity Mode disabled. New hashes will use standard mode.', 'archiviomd' ),
 			'notice_level'   => $status['notice_level'],
 			'notice_message' => wp_strip_all_tags( $status['notice_message'] ),
 			'key_defined'    => $status['key_defined'],
@@ -849,7 +855,7 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permission denied', 'archivio-md-build' ) );
+			wp_die( esc_html__( 'Permission denied', 'archiviomd' ) );
 		}
 
 		global $wpdb;
@@ -899,7 +905,7 @@ class MDSM_Archivio_Post {
 		check_ajax_referer( 'archivio_post_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'archiviomd' ) ) );
 		}
 
 		self::create_audit_table();
@@ -908,9 +914,9 @@ class MDSM_Archivio_Post {
 		$table_name = $wpdb->prefix . 'archivio_post_audit';
 
 		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) ) === $table_name ) {
-			wp_send_json_success( array( 'message' => esc_html__( 'Audit log table recreated successfully!', 'archivio-md-build' ) ) );
+			wp_send_json_success( array( 'message' => esc_html__( 'Audit log table recreated successfully!', 'archiviomd' ) ) );
 		} else {
-			wp_send_json_error( array( 'message' => esc_html__( 'Failed to create table. Check database permissions.', 'archivio-md-build' ) ) );
+			wp_send_json_error( array( 'message' => esc_html__( 'Failed to create table. Check database permissions.', 'archiviomd' ) ) );
 		}
 	}
 

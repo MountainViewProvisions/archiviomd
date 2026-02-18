@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 
 // Security check
 if (!current_user_can('manage_options')) {
-    wp_die(__('You do not have sufficient permissions to access this page.'));
+    wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'archiviomd' ) );
 }
 
 $file_manager = new MDSM_File_Manager();
@@ -270,69 +270,18 @@ foreach ($custom_files as $file_name => $description) {
     </div>
 </div>
 
-<style>
-.card {
-    background: #fff;
-    border: 1px solid #ccd0d4;
-    border-left: 4px solid #2271b1;
-    padding: 20px;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
-}
-.card h2 {
-    margin-top: 0;
-}
-.mdsm-status-verified {
-    color: #008a00;
-}
-.mdsm-status-mismatch {
-    color: #dc3232;
-    font-weight: bold;
-}
-.mdsm-status-missing {
-    color: #996800;
-}
-.mdsm-verification-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-.mdsm-verification-table th,
-.mdsm-verification-table td {
-    text-align: left;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-}
-.mdsm-verification-table th {
-    background-color: #f0f0f1;
-    font-weight: 600;
-}
-.mdsm-dryrun-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-.mdsm-dryrun-table th,
-.mdsm-dryrun-table td {
-    text-align: left;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-}
-.mdsm-dryrun-table th {
-    background-color: #f0f0f1;
-    font-weight: 600;
-}
-.mdsm-action-restore {
-    background-color: #e7f5e9;
-}
-.mdsm-action-overwrite {
-    background-color: #fff4e6;
-}
-.mdsm-action-conflict {
-    background-color: #ffe9e9;
-}
-</style>
+<?php
+wp_add_inline_style( 'mdsm-compliance-tools', '.card{background:#fff;border:1px solid #ccd0d4;border-left:4px solid #2271b1;padding:20px;box-shadow:0 1px 1px rgba(0,0,0,.04)}.card h2{margin-top:0}.mdsm-status-verified{color:#008a00}.mdsm-status-mismatch{color:#dc3232;font-weight:bold}.mdsm-status-missing{color:#996800}.mdsm-verification-table,.mdsm-dryrun-table{width:100%;border-collapse:collapse;margin-top:10px}.mdsm-verification-table th,.mdsm-verification-table td,.mdsm-dryrun-table th,.mdsm-dryrun-table td{text-align:left;padding:8px;border-bottom:1px solid #ddd}.mdsm-verification-table th,.mdsm-dryrun-table th{background-color:#f0f0f1;font-weight:600}.mdsm-action-restore{background-color:#e7f5e9}.mdsm-action-overwrite{background-color:#fff4e6}.mdsm-action-conflict{background-color:#ffe9e9}' );
+?>
 
-<script type="text/javascript">
+<?php
+wp_localize_script( 'mdsm-compliance-tools-js', 'mdsmComplianceData', array(
+    'executeRestoreNonce' => wp_create_nonce( 'mdsm_execute_restore' ),
+) );
+?>
+<?php
+ob_start();
+?>
 jQuery(document).ready(function($) {
     
     // Export Metadata to CSV
@@ -520,7 +469,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             data: {
                 action: 'mdsm_execute_restore',
-                nonce: '<?php echo wp_create_nonce('mdsm_execute_restore'); ?>',
+                nonce: mdsmComplianceData.executeRestoreNonce,
                 backup_id: backupData.backup_info.backup_id
             },
             success: function(response) {
@@ -742,4 +691,7 @@ jQuery(document).ready(function($) {
         });
     });
 });
-</script>
+<?php
+$_mdsm_inline_js = ob_get_clean();
+wp_add_inline_script( 'mdsm-compliance-tools-js', $_mdsm_inline_js );
+?>

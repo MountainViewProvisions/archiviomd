@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 if (isset($_POST['mdsm_save_public_index']) && check_admin_referer('mdsm_save_public_index', 'mdsm_public_index_nonce')) {
     if (current_user_can('manage_options')) {
         // Get mode
-        $enabled = isset($_POST['index_output_mode']) && $_POST['index_output_mode'] === 'page';
+        $enabled = isset( $_POST['index_output_mode'] ) && sanitize_text_field( wp_unslash( $_POST['index_output_mode'] ) ) === 'page';
         
         // Get page ID
         $page_id = isset($_POST['index_page_id']) ? intval($_POST['index_page_id']) : 0;
@@ -19,7 +19,8 @@ if (isset($_POST['mdsm_save_public_index']) && check_admin_referer('mdsm_save_pu
         // Get selected documents
         $public_docs = array();
         if (isset($_POST['public_docs']) && is_array($_POST['public_docs'])) {
-            foreach ($_POST['public_docs'] as $filename) {
+            foreach ( wp_unslash( $_POST['public_docs'] ) as $filename ) {
+                $filename = sanitize_text_field( wp_unslash( $filename ) );
                 $public_docs[sanitize_text_field($filename)] = true;
             }
         }
@@ -27,7 +28,9 @@ if (isset($_POST['mdsm_save_public_index']) && check_admin_referer('mdsm_save_pu
         // Get descriptions
         $descriptions = array();
         if (isset($_POST) && is_array($_POST)) {
-            foreach ($_POST as $key => $value) {
+            foreach ( $_POST as $key => $value ) {
+                $key   = sanitize_text_field( wp_unslash( $key ) );
+                $value = sanitize_text_field( wp_unslash( $value ) );
                 if (strpos($key, 'doc_desc_') === 0) {
                     $filename = str_replace('doc_desc_', '', $key);
                     if (!empty($value)) {

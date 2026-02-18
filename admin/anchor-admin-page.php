@@ -83,7 +83,7 @@ $is_enabled  = $anchoring->is_enabled();
 			if ( $next ) {
 				$diff = $next - time();
 				echo esc_html( $diff > 0
-					? sprintf( __( 'in %d minute(s)', 'archiviomd' ), max( 1, ceil( $diff / 60 ) ) )
+					? sprintf( esc_html__(  'in %d minute(s)', 'archiviomd' ), max( 1, ceil( $diff / 60 ) ) )
 					: __( 'imminent', 'archiviomd' )
 				);
 			} else {
