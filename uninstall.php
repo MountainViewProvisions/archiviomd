@@ -102,7 +102,7 @@ function archiviomd_uninstall_cleanup() {
         wp_delete_post($page_id, true);
     }
     
-    // IMPORTANT: Markdown files in /wp-content/uploads/meta-docs/ are NOT deleted
+    // IMPORTANT: Markdown files in the uploads/meta-docs/ directory are NOT deleted
     // IMPORTANT: Generated sitemaps and HTML files are NOT deleted
     // These files are considered site content, not plugin data
     // Administrators must manually delete these files if desired

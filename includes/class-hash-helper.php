@@ -58,23 +58,43 @@ class MDSM_Hash_Helper {
 	public static function allowed_algorithms() {
 		return array(
 			'sha256'       => 'SHA-256',
+			'sha224'       => 'SHA-224',
+			'sha384'       => 'SHA-384',
 			'sha512'       => 'SHA-512',
+			'sha512-224'   => 'SHA-512/224',
+			'sha512-256'   => 'SHA-512/256',
 			'sha3-256'     => 'SHA3-256',
 			'sha3-512'     => 'SHA3-512',
 			'blake2b'      => 'BLAKE2b-512',
+			'blake2s'      => 'BLAKE2s-256',
+			'sha256d'      => 'SHA-256d (Bitcoin)',
+			'ripemd160'    => 'RIPEMD-160',
+			'whirlpool'    => 'Whirlpool-512',
 			'blake3'       => 'BLAKE3-256',
 			'shake128'     => 'SHAKE128-256',
 			'shake256'     => 'SHAKE256-512',
+			'gost'         => 'GOST R 34.11-94',
+			'gost-crypto'  => 'GOST R 34.11-94 (CryptoPro)',
+			'md5'          => 'MD5',
+			'sha1'         => 'SHA-1',
 		);
 	}
 
 	public static function standard_algorithms() {
 		return array(
-			'sha256'   => 'SHA-256',
-			'sha512'   => 'SHA-512',
-			'sha3-256' => 'SHA3-256',
-			'sha3-512' => 'SHA3-512',
-			'blake2b'  => 'BLAKE2b-512',
+			'sha256'     => 'SHA-256',
+			'sha224'     => 'SHA-224',
+			'sha384'     => 'SHA-384',
+			'sha512'     => 'SHA-512',
+			'sha512-224' => 'SHA-512/224',
+			'sha512-256' => 'SHA-512/256',
+			'sha3-256'   => 'SHA3-256',
+			'sha3-512'   => 'SHA3-512',
+			'blake2b'    => 'BLAKE2b-512',
+			'blake2s'    => 'BLAKE2s-256',
+			'sha256d'    => 'SHA-256d (Bitcoin)',
+			'ripemd160'  => 'RIPEMD-160',
+			'whirlpool'  => 'Whirlpool-512',
 		);
 	}
 
@@ -86,8 +106,30 @@ class MDSM_Hash_Helper {
 		);
 	}
 
+	public static function deprecated_algorithms() {
+		return array(
+			'md5'  => 'MD5',
+			'sha1' => 'SHA-1',
+		);
+	}
+
+	public static function regional_algorithms() {
+		return array(
+			'gost'        => 'GOST R 34.11-94',
+			'gost-crypto' => 'GOST R 34.11-94 (CryptoPro)',
+		);
+	}
+
 	public static function is_experimental( $algorithm ) {
 		return array_key_exists( $algorithm, self::experimental_algorithms() );
+	}
+
+	public static function is_deprecated( $algorithm ) {
+		return array_key_exists( $algorithm, self::deprecated_algorithms() );
+	}
+
+	public static function is_regional( $algorithm ) {
+		return array_key_exists( $algorithm, self::regional_algorithms() );
 	}
 
 	public static function algorithm_label( $algorithm ) {
@@ -237,6 +279,62 @@ class MDSM_Hash_Helper {
 					$fallback  = true;
 				}
 				break;
+			case 'sha224':
+				$hash = hash( 'sha224', $data );
+				break;
+			case 'sha384':
+				$hash = hash( 'sha384', $data );
+				break;
+			case 'sha512-224':
+				$hash = hash( 'sha512/224', $data );
+				break;
+			case 'sha512-256':
+				$hash = hash( 'sha512/256', $data );
+				break;
+			case 'ripemd160':
+				$hash = hash( 'ripemd160', $data );
+				break;
+			case 'whirlpool':
+				$hash = hash( 'whirlpool', $data );
+				break;
+			case 'sha256d':
+				// Double SHA-256: SHA256(SHA256(data)) – Bitcoin-compatible.
+				// SHA-256 is always available; no fallback needed.
+				$hash = hash( 'sha256', hex2bin( hash( 'sha256', $data ) ) );
+				break;
+			case 'blake2s':
+				if ( in_array( 'blake2s256', hash_algos(), true ) ) {
+					$hash = hash( 'blake2s256', $data );
+				} else {
+					$hash      = hash( 'sha256', $data );
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'gost':
+				if ( in_array( 'gost', hash_algos(), true ) ) {
+					$hash = hash( 'gost', $data );
+				} else {
+					$hash      = hash( 'sha256', $data );
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'gost-crypto':
+				if ( in_array( 'gost-crypto', hash_algos(), true ) ) {
+					$hash = hash( 'gost-crypto', $data );
+				} else {
+					$hash      = hash( 'sha256', $data );
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'md5':
+				$hash = hash( 'md5', $data );
+				break;
+			case 'sha1':
+				$hash = hash( 'sha1', $data );
+				break;
 			case 'sha256':
 			default:
 				$hash      = hash( 'sha256', $data );
@@ -366,6 +464,83 @@ class MDSM_Hash_Helper {
 					$algorithm = 'sha256';
 					$fallback  = true;
 				}
+				break;
+			case 'sha224':
+				$php_algo = 'sha224';
+				break;
+			case 'sha384':
+				$php_algo = 'sha384';
+				break;
+			case 'sha512-224':
+				$php_algo = 'sha512/224';
+				break;
+			case 'sha512-256':
+				$php_algo = 'sha512/256';
+				break;
+			case 'ripemd160':
+				$php_algo = 'ripemd160';
+				break;
+			case 'whirlpool':
+				$php_algo = 'whirlpool';
+				break;
+			case 'sha256d':
+				// Manual HMAC construction using SHA-256d as the hash primitive.
+				$blocksize = 64;
+				$k = $key;
+				if ( strlen( $k ) > $blocksize ) {
+					$k = hex2bin( hash( 'sha256', hex2bin( hash( 'sha256', $k ) ) ) );
+				}
+				if ( strlen( $k ) < $blocksize ) {
+					$k = str_pad( $k, $blocksize, chr( 0x00 ) );
+				}
+				$ipad  = str_repeat( chr( 0x36 ), $blocksize );
+				$opad  = str_repeat( chr( 0x5c ), $blocksize );
+				$inner = hash( 'sha256', hex2bin( hash( 'sha256', ( $k ^ $ipad ) . $data ) ) );
+				$hash  = hash( 'sha256', hex2bin( hash( 'sha256', ( $k ^ $opad ) . hex2bin( $inner ) ) ) );
+				return array(
+					'hash'      => $hash,
+					'algorithm' => 'sha256d',
+					'mode'      => self::MODE_HMAC,
+					'fallback'  => false,
+				);
+			case 'blake2s':
+				if ( function_exists( 'hash_hmac_algos' ) && in_array( 'blake2s256', hash_hmac_algos(), true ) ) {
+					$hash = hash_hmac( 'blake2s256', $data, $key );
+					return array(
+						'hash'      => $hash,
+						'algorithm' => 'blake2s',
+						'mode'      => self::MODE_HMAC,
+						'fallback'  => false,
+					);
+				} else {
+					$php_algo  = 'sha256';
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'gost':
+				if ( function_exists( 'hash_hmac_algos' ) && in_array( 'gost', hash_hmac_algos(), true ) ) {
+					$php_algo = 'gost';
+				} else {
+					$php_algo  = 'sha256';
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'gost-crypto':
+				if ( function_exists( 'hash_hmac_algos' ) && in_array( 'gost-crypto', hash_hmac_algos(), true ) ) {
+					$php_algo = 'gost-crypto';
+				} else {
+					$php_algo  = 'sha256';
+					$algorithm = 'sha256';
+					$fallback  = true;
+				}
+				break;
+			case 'md5':
+				$php_algo = 'md5';
+				break;
+			case 'sha1':
+				$php_algo = 'sha1';
 				break;
 			case 'sha256':
 			default:
@@ -615,6 +790,21 @@ class MDSM_Hash_Helper {
 		return in_array( 'blake2b512', $algos, true ) || in_array( 'blake2b', $algos, true );
 	}
 
+	public static function is_blake2s_available() {
+		return in_array( 'blake2s256', hash_algos(), true );
+	}
+
+	public static function is_sha256d_available() {
+		// SHA-256d only requires SHA-256, which is always present.
+		return true;
+	}
+
+	public static function is_sha2_truncated_available() {
+		// SHA-224, SHA-384, SHA-512/224, SHA-512/256 are present in all
+		// PHP builds since 5.4 via the bundled hash extension.
+		return true;
+	}
+
 	public static function is_sha3_available() {
 		$algos = hash_algos();
 		return in_array( 'sha3-256', $algos, true ) && in_array( 'sha3-512', $algos, true );
@@ -640,6 +830,24 @@ class MDSM_Hash_Helper {
 
 	public static function get_algorithm_availability( $algorithm ) {
 		switch ( $algorithm ) {
+			case 'sha224':
+			case 'sha384':
+			case 'sha512-224':
+			case 'sha512-256':
+				return self::is_sha2_truncated_available();
+			case 'ripemd160':
+			case 'whirlpool':
+			case 'md5':
+			case 'sha1':
+				return true;
+			case 'gost':
+				return in_array( 'gost', hash_algos(), true );
+			case 'gost-crypto':
+				return in_array( 'gost-crypto', hash_algos(), true );
+			case 'sha256d':
+				return self::is_sha256d_available();
+			case 'blake2s':
+				return self::is_blake2s_available();
 			case 'blake3':
 				return self::is_blake3_available();
 			case 'shake128':

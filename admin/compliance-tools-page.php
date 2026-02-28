@@ -73,7 +73,7 @@ foreach ($custom_files as $file_name => $description) {
     <div class="card" style="margin-top: 20px;">
         <h2>1. Metadata Export (CSV)</h2>
         <p>Export all ArchivioMD metadata to a CSV file for compliance audits and record-keeping.</p>
-        <p><strong>Documents with metadata:</strong> <?php echo $total_documents; ?></p>
+        <p><strong>Documents with metadata:</strong> <?php echo absint( $total_documents ); ?></p>
         <p><strong>Export includes:</strong> UUID, filename, path, last-modified timestamp (UTC), SHA-256 checksum, changelog count, and full changelog entries.</p>
         
         <form method="post" id="mdsm-export-metadata-form">
@@ -84,6 +84,26 @@ foreach ($custom_files as $file_name => $description) {
                 Export Metadata to CSV
             </button>
         </form>
+        <div id="mdsm-csv-sig-result" style="display:none; margin-top: 12px;"></div>
+    </div>
+
+    <!-- Tool 1b: Structured Compliance JSON Export -->
+    <div class="card" style="margin-top: 20px;">
+        <h2>1b. Structured Compliance Export (JSON)</h2>
+        <p>Export a complete, structured evidence package as a single JSON file. Unlike the flat CSV, this export preserves the full relationships between each post or document, its hash history, all anchor log entries, and any RFC&nbsp;3161 timestamp manifests.</p>
+        <p><strong>Suitable for:</strong> legal evidence packages, compliance audits, feeding into document management systems or SIEMs.</p>
+        <p><strong>Export includes:</strong></p>
+        <ul>
+            <li><strong>Posts</strong> — title, URL, current hash, full hash history from the Cryptographic Verification log, and all anchoring attempts with TSR manifest data inlined.</li>
+            <li><strong>Documents</strong> — UUID, filename, full append-only changelog, and all anchoring attempts.</li>
+        </ul>
+        <?php wp_nonce_field( 'mdsm_export_compliance_json', 'mdsm_export_compliance_json_nonce' ); ?>
+        <button type="button" id="mdsm-export-compliance-json-btn" class="button button-primary">
+            <span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+            Export Compliance Package (JSON)
+        </button>
+        <span id="mdsm-export-compliance-json-status" style="margin-left: 12px; color: #666;"></span>
+        <div id="mdsm-json-sig-result" style="display:none; margin-top: 12px;"></div>
     </div>
 
     <!-- Tool 2: Backup & Restore -->
@@ -117,6 +137,7 @@ foreach ($custom_files as $file_name => $description) {
                 Create Backup Archive
             </button>
         </form>
+        <div id="mdsm-backup-sig-result" style="display:none; margin-top: 12px;"></div>
 
         <h3 style="margin-top: 30px;">Restore from Backup</h3>
         <p><strong style="color: #dc3232;">DESTRUCTIVE OPERATION:</strong> Restoring will overwrite existing metadata and files.</p>
@@ -189,7 +210,7 @@ foreach ($custom_files as $file_name => $description) {
         
         <p><strong>What is NOT affected by cleanup:</strong></p>
         <ul>
-            <li>Markdown files in <code>/wp-content/uploads/meta-docs/</code> (never deleted)</li>
+            <li>Markdown files in <code><?php $upload_dir = wp_upload_dir(); echo esc_html( $upload_dir['basedir'] . '/meta-docs/' ); ?></code> (never deleted)</li>
             <li>Generated HTML files (never deleted)</li>
             <li>Generated sitemaps (never deleted)</li>
             <li>WordPress core data, posts, pages, or other plugin data</li>
@@ -278,12 +299,48 @@ wp_add_inline_style( 'mdsm-compliance-tools', '.card{background:#fff;border:1px 
 wp_localize_script( 'mdsm-compliance-tools-js', 'mdsmComplianceData', array(
     'executeRestoreNonce' => wp_create_nonce( 'mdsm_execute_restore' ),
 ) );
+// Pass signing availability so the JS helper can label the sig notice correctly.
+$mdsm_signing_on = (
+    class_exists( 'MDSM_Ed25519_Signing' )
+    && MDSM_Ed25519_Signing::is_sodium_available()
+    && MDSM_Ed25519_Signing::is_private_key_defined()
+);
+wp_add_inline_script(
+    'mdsm-compliance-tools-js',
+    'window.mdsmSigningEnabled = ' . ( $mdsm_signing_on ? 'true' : 'false' ) . ';',
+    'before'
+);
 ?>
 <?php
 ob_start();
 ?>
 jQuery(document).ready(function($) {
-    
+
+    // ── Shared helper: render a sig-download notice into a container ──────
+    function mdsmRenderSigResult( $container, data ) {
+        if ( data.sig_url && data.sig_filename ) {
+            $container.html(
+                '<div style="padding: 10px 14px; background: #e7f5e9; border-left: 4px solid #008a00; display: flex; align-items: center; gap: 12px;">' +
+                '<span class="dashicons dashicons-lock" style="color: #008a00; font-size: 18px; flex-shrink: 0;"></span>' +
+                '<div style="flex: 1;">' +
+                '<strong style="color: #008a00;">' + ( window.mdsmSigningEnabled ? '✓ Export signed with Ed25519' : '✓ Integrity receipt generated' ) + '</strong>' +
+                '<p style="margin: 2px 0 0 0; font-size: 12px; color: #555;">' +
+                'A <code>.sig.json</code> file has been generated alongside this export. ' +
+                'It contains a SHA-256 integrity hash' +
+                ( window.mdsmSigningEnabled ? ' and an Ed25519 signature' : '' ) +
+                ' binding the filename, export type, site URL, and timestamp. ' +
+                'Keep it with the export file for auditable verification.' +
+                '</p>' +
+                '</div>' +
+                '<a href="' + data.sig_url + '" class="button button-secondary" style="flex-shrink: 0; white-space: nowrap;">' +
+                '<span class="dashicons dashicons-download" style="margin-top: 3px;"></span> ' +
+                'Download Signature' +
+                '</a>' +
+                '</div>'
+            ).show();
+        }
+    }
+
     // Export Metadata to CSV
     $('#mdsm-export-metadata-form').on('submit', function(e) {
         e.preventDefault();
@@ -291,6 +348,7 @@ jQuery(document).ready(function($) {
         var $button = $(this).find('button[type="submit"]');
         var originalText = $button.html();
         $button.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> Generating CSV...');
+        $('#mdsm-csv-sig-result').hide().empty();
         
         $.ajax({
             url: ajaxurl,
@@ -301,9 +359,8 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success && response.data.download_url) {
-                    // Trigger download
                     window.location.href = response.data.download_url;
-                    alert('Metadata export completed! Download starting...');
+                    mdsmRenderSigResult( $('#mdsm-csv-sig-result'), response.data );
                 } else {
                     alert('Error: ' + (response.data.message || 'Failed to export metadata'));
                 }
@@ -324,6 +381,7 @@ jQuery(document).ready(function($) {
         var $button = $(this).find('button[type="submit"]');
         var originalText = $button.html();
         $button.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> Creating Backup...');
+        $('#mdsm-backup-sig-result').hide().empty();
         
         $.ajax({
             url: ajaxurl,
@@ -335,7 +393,7 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success && response.data.download_url) {
                     window.location.href = response.data.download_url;
-                    alert('Backup created successfully! Download starting...');
+                    mdsmRenderSigResult( $('#mdsm-backup-sig-result'), response.data );
                 } else {
                     alert('Error: ' + (response.data.message || 'Failed to create backup'));
                 }
@@ -690,6 +748,41 @@ jQuery(document).ready(function($) {
             }
         });
     });
+    // Export Compliance JSON
+    $('#mdsm-export-compliance-json-btn').on('click', function() {
+        var $btn    = $(this);
+        var $status = $('#mdsm-export-compliance-json-status');
+        var originalHtml = $btn.html();
+
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> Generating&hellip;');
+        $status.text('');
+        $('#mdsm-json-sig-result').hide().empty();
+
+        $.ajax({
+            url:  ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'mdsm_export_compliance_json',
+                nonce:  $('#mdsm_export_compliance_json_nonce').val()
+            },
+            success: function(response) {
+                if (response.success && response.data.download_url) {
+                    $status.css('color', '#008a00').text('Export ready — download starting.');
+                    window.location.href = response.data.download_url;
+                    mdsmRenderSigResult( $('#mdsm-json-sig-result'), response.data );
+                } else {
+                    $status.css('color', '#dc3232').text('Error: ' + (response.data.message || 'Export failed.'));
+                }
+            },
+            error: function() {
+                $status.css('color', '#dc3232').text('Server error — please try again.');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
+
 });
 <?php
 $_mdsm_inline_js = ob_get_clean();

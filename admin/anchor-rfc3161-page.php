@@ -22,36 +22,31 @@ if ( ! current_user_can( 'manage_options' ) ) {
 $anchoring = MDSM_External_Anchoring::get_instance();
 $settings  = $anchoring->get_settings();
 
-$provider          = $settings['provider'];
-$visibility        = $settings['visibility'];
-$has_token         = ! empty( $settings['token'] );
-$repo_owner        = $settings['repo_owner'];
-$repo_name         = $settings['repo_name'];
-$branch            = $settings['branch'];
-$folder_path       = $settings['folder_path'];
-$commit_msg        = $settings['commit_message'];
+$rfc3161_enabled   = ! empty( $settings['rfc3161_enabled'] ) && '1' === (string) $settings['rfc3161_enabled'];
 $rfc3161_provider  = $settings['rfc3161_provider'];
+$active_providers  = $anchoring->get_active_providers();
 $rfc3161_custom    = $settings['rfc3161_custom_url'];
 $rfc3161_username  = $settings['rfc3161_username'];
 $has_rfc3161_pass  = ! empty( $settings['rfc3161_password'] );
+// Git provider state — read-only on this page.
+$git_provider      = $settings['provider'];
+$has_git_token     = ! empty( $settings['token'] );
+$visibility        = $settings['visibility'];
 $queue_count       = MDSM_Anchor_Queue::count();
 $is_enabled        = $anchoring->is_enabled();
-$active_providers  = $anchoring->get_active_providers();
-$perm_failures     = (int) get_option( 'mdsm_anchor_perm_failures', 0 );
-$log_retention     = (int) $settings['log_retention_days'];
 $tsa_profiles      = MDSM_TSA_Profiles::all();
 ?>
 <div class="wrap mdsm-anchor-wrap">
 	<h1 class="mdsm-anchor-title">
-		<span class="dashicons dashicons-admin-links" style="font-size:26px;margin-right:8px;vertical-align:middle;color:#2271b1;"></span>
-		<?php esc_html_e( 'Git Distribution', 'archiviomd' ); ?>
+		<span class="dashicons dashicons-shield" style="font-size:26px;margin-right:8px;vertical-align:middle;color:#2271b1;"></span>
+		<?php esc_html_e( 'Trusted Timestamps (RFC 3161)', 'archiviomd' ); ?>
 	</h1>
 
 	<p class="mdsm-anchor-intro">
-		<?php esc_html_e( 'Push document integrity hashes to a Git repository (GitHub or GitLab) for tamper-evident, independently verifiable records. Anchoring runs asynchronously via WP-Cron and never interrupts document saving.', 'archiviomd' ); ?>
+		<?php esc_html_e( 'Anchor document integrity hashes to an external repository or Trusted Timestamping Authority (TSA) for tamper-evident, independent verification. Anchoring runs asynchronously and never interrupts document saving.', 'archiviomd' ); ?>
 	</p>
 
-	<?php if ( 'public' === $visibility && in_array( $provider, array( 'github', 'gitlab' ), true ) ) : ?>
+	<?php if ( 'public' === $visibility && in_array( $git_provider, array( 'github', 'gitlab' ), true ) ) : ?>
 	<div class="notice notice-warning mdsm-anchor-notice" id="mdsm-visibility-warning">
 		<p>
 			<strong><?php esc_html_e( 'Public Repository Warning:', 'archiviomd' ); ?></strong>
@@ -60,55 +55,25 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 	</div>
 	<?php endif; ?>
 
-	<?php if ( $perm_failures > 0 ) : ?>
-	<div class="notice notice-error mdsm-anchor-notice" id="mdsm-perm-failure-notice">
-		<p>
-			<strong><?php esc_html_e( 'Anchor Job Failure:', 'archiviomd' ); ?></strong>
-			<?php
-			echo esc_html(
-				sprintf(
-					/* translators: %d: number of permanently failed jobs */
-					_n(
-						'%d anchoring job permanently failed after all retries were exhausted. Check the Anchor Activity Log below for details.',
-						'%d anchoring jobs permanently failed after all retries were exhausted. Check the Anchor Activity Log below for details.',
-						$perm_failures,
-						'archiviomd'
-					),
-					$perm_failures
-				)
-			);
-			?>
-		</p>
-		<button type="button" class="notice-dismiss" id="mdsm-dismiss-fail-notice">
-			<span class="screen-reader-text"><?php esc_html_e( 'Dismiss this notice.', 'archiviomd' ); ?></span>
-		</button>
-	</div>
-	<?php endif; ?>
+	<p style="font-size:13px;margin-bottom:16px;"><?php esc_html_e( 'Looking for Git-based anchoring?', 'archiviomd' ); ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=archivio-git-distribution' ) ); ?>"><?php esc_html_e( 'Git Distribution (GitHub / GitLab)', 'archiviomd' ); ?> &rarr;</a></p>
 
-	<?php
-	// Separate git providers from RFC 3161 for this page's banners.
-	$_git_active     = array_values( array_filter( $active_providers, function( $_pk ) { return 'rfc3161' !== $_pk; } ) );
-	$_rfc3161_active = in_array( 'rfc3161', $active_providers, true );
-	?>
-
-	<?php if ( ! empty( $_git_active ) ) : ?>
+	<?php if ( $is_enabled ) : ?>
 	<div class="notice notice-success mdsm-anchor-notice" style="border-left-color:#00a32a;">
 		<p>
 			<strong><?php esc_html_e( 'Anchoring Active', 'archiviomd' ); ?></strong> —
 			<?php
-			$_provider_labels = array_map( 'strtoupper', $_git_active );
+			$_ap_labels = array();
+			foreach ( $active_providers as $_apk ) {
+				if ( 'rfc3161' === $_apk ) {
+					$_apr = MDSM_TSA_Profiles::get( $rfc3161_provider );
+					$_ap_labels[] = 'RFC 3161 (' . ( $_apr ? $_apr['label'] : esc_html__( 'Custom TSA', 'archiviomd' ) ) . ')';
+				} else {
+					$_ap_labels[] = strtoupper( $_apk );
+				}
+			}
 			/* translators: %s: comma-separated list of provider names */
-			echo esc_html( sprintf( __( 'Documents will be anchored to %s asynchronously via WP-Cron.', 'archiviomd' ), implode( ' + ', $_provider_labels ) ) );
+			echo esc_html( sprintf( __( 'Documents will be anchored to %s asynchronously via WP-Cron.', 'archiviomd' ), implode( ' + ', $_ap_labels ) ) );
 			?>
-		</p>
-	</div>
-	<?php endif; ?>
-
-	<?php if ( $_rfc3161_active ) : ?>
-	<div class="notice notice-info mdsm-anchor-notice">
-		<p>
-			<?php esc_html_e( 'RFC 3161 Trusted Timestamps are active. TSA settings and the full timestamp explainer are on the', 'archiviomd' ); ?>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=archivio-rfc3161' ) ); ?>"><?php esc_html_e( 'Trusted Timestamps page', 'archiviomd' ); ?></a>.
 		</p>
 	</div>
 	<?php endif; ?>
@@ -116,21 +81,26 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 	<!-- Status bar -->
 	<div class="mdsm-anchor-status-bar">
 		<div class="mdsm-anchor-status-item">
-			<span class="mdsm-anchor-label"><?php esc_html_e( 'Provider(s):', 'archiviomd' ); ?></span>
+			<span class="mdsm-anchor-label"><?php esc_html_e( 'Provider:', 'archiviomd' ); ?></span>
 			<strong>
 				<?php
-				// This page is for Git providers only; RFC 3161 is managed on the Trusted Timestamps page.
-				$_git_providers = array_filter( $active_providers, function( $_pk ) {
-					return 'rfc3161' !== $_pk;
-				} );
-				if ( empty( $_git_providers ) ) {
+				$provider_labels = array();
+
+				// Show Git provider if one is active.
+				if ( ! empty( $git_provider ) && 'none' !== $git_provider && 'rfc3161' !== $git_provider ) {
+					$provider_labels[] = strtoupper( $git_provider );
+				}
+
+				// Show RFC 3161 TSA provider if the checkbox is enabled.
+				if ( $rfc3161_enabled ) {
+					$profile           = MDSM_TSA_Profiles::get( $rfc3161_provider );
+					$provider_labels[] = 'RFC 3161 — ' . ( $profile ? $profile['label'] : __( 'Custom TSA', 'archiviomd' ) );
+				}
+
+				if ( empty( $provider_labels ) ) {
 					echo esc_html__( 'None (disabled)', 'archiviomd' );
 				} else {
-					$_status_labels = array();
-					foreach ( $_git_providers as $_pk ) {
-						$_status_labels[] = strtoupper( $_pk );
-					}
-					echo esc_html( implode( ' + ', $_status_labels ) );
+					echo esc_html( implode( ' + ', $provider_labels ) );
 				}
 				?>
 			</strong>
@@ -165,142 +135,114 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 
 		<table class="form-table mdsm-anchor-table" role="presentation">
 
-			<!-- Provider -->
+			<!-- RFC 3161 enable toggle -->
 			<tr>
 				<th scope="row">
-					<label for="mdsm-provider"><?php esc_html_e( 'Anchoring Provider', 'archiviomd' ); ?></label>
+					<label for="mdsm-rfc3161-enabled"><?php esc_html_e( 'RFC 3161 Timestamping', 'archiviomd' ); ?></label>
 				</th>
 				<td>
-					<select id="mdsm-provider" name="provider" class="regular-text">
-						<option value="none"    <?php selected( $provider, 'none' ); ?>><?php esc_html_e( 'None (disabled)', 'archiviomd' ); ?></option>
-						<option value="github"  <?php selected( $provider, 'github' ); ?>><?php esc_html_e( 'GitHub', 'archiviomd' ); ?></option>
-						<option value="gitlab"  <?php selected( $provider, 'gitlab' ); ?>><?php esc_html_e( 'GitLab', 'archiviomd' ); ?></option>
-					</select>
-					<p class="description"><?php esc_html_e( 'Select the Git provider for this installation. RFC 3161 timestamping is configured independently on the Trusted Timestamps page.', 'archiviomd' ); ?></p>
+					<label>
+						<input type="checkbox" id="mdsm-rfc3161-enabled" name="rfc3161_enabled" value="1"
+							<?php checked( $rfc3161_enabled ); ?> />
+						<?php esc_html_e( 'Enable RFC 3161 Trusted Timestamps', 'archiviomd' ); ?>
+					</label>
+					<p class="description">
+						<?php esc_html_e( 'When enabled, every anchor job is sent to the selected TSA independently of any Git provider. Both can be active simultaneously.', 'archiviomd' ); ?>
+						<?php if ( ! empty( $git_provider ) && 'none' !== $git_provider ) : ?>
+							<br><em><?php echo esc_html( sprintf(
+								/* translators: %s: provider name */
+								__( 'Git provider active: %s', 'archiviomd' ),
+								strtoupper( $git_provider )
+							) ); ?> — <a href="<?php echo esc_url( admin_url( 'admin.php?page=archivio-git-distribution' ) ); ?>"><?php esc_html_e( 'Git Distribution settings', 'archiviomd' ); ?></a></em>
+						<?php endif; ?>
+					</p>
 				</td>
 			</tr>
 
 			<!-- ═══════════════════════════════════════════════════════════════ -->
-			<!-- Git provider fields — shown for GitHub / GitLab                -->
+			<!-- RFC 3161 fields — shown only when provider = rfc3161           -->
 			<!-- ═══════════════════════════════════════════════════════════════ -->
 
-			<!-- Visibility -->
-			<tr class="mdsm-anchor-git-field">
+			<!-- TSA sub-provider -->
+			<tr class="mdsm-anchor-rfc3161-field">
 				<th scope="row">
-					<label for="mdsm-visibility"><?php esc_html_e( 'Repository Visibility', 'archiviomd' ); ?></label>
+					<label for="mdsm-rfc3161-provider"><?php esc_html_e( 'Timestamping Authority', 'archiviomd' ); ?></label>
 				</th>
 				<td>
-					<select id="mdsm-visibility" name="visibility" class="regular-text">
-						<option value="private" <?php selected( $visibility, 'private' ); ?>><?php esc_html_e( 'Private (recommended)', 'archiviomd' ); ?></option>
-						<option value="public"  <?php selected( $visibility, 'public' ); ?>><?php esc_html_e( 'Public — metadata will be publicly exposed', 'archiviomd' ); ?></option>
+					<select id="mdsm-rfc3161-provider" name="rfc3161_provider" class="regular-text">
+						<?php foreach ( $tsa_profiles as $slug => $profile ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"
+								data-url="<?php echo esc_attr( $profile['url'] ); ?>"
+								data-auth="<?php echo esc_attr( $profile['auth'] ); ?>"
+								data-notes="<?php echo esc_attr( $profile['notes'] ); ?>"
+								<?php selected( $rfc3161_provider, $slug ); ?>>
+								<?php echo esc_html( $profile['label'] ); ?>
+							</option>
+						<?php endforeach; ?>
 					</select>
-					<p class="description"><?php esc_html_e( 'This setting is informational — it documents your intent and controls the public-visibility warning. The repository must already exist with the correct visibility on the provider.', 'archiviomd' ); ?></p>
+					<p class="description" id="mdsm-tsa-notes">
+						<?php
+						$selected_profile = MDSM_TSA_Profiles::get( $rfc3161_provider );
+						echo esc_html( $selected_profile ? $selected_profile['notes'] : '' );
+						?>
+					</p>
 				</td>
 			</tr>
 
-			<!-- Token -->
-			<tr class="mdsm-anchor-git-field">
+			<!-- Custom TSA URL — visible only when "custom" is selected -->
+			<tr class="mdsm-anchor-rfc3161-field mdsm-rfc3161-custom-field">
 				<th scope="row">
-					<label for="mdsm-token"><?php esc_html_e( 'Personal Access Token', 'archiviomd' ); ?></label>
+					<label for="mdsm-rfc3161-custom-url"><?php esc_html_e( 'Custom TSA URL', 'archiviomd' ); ?></label>
+				</th>
+				<td>
+					<input type="url" id="mdsm-rfc3161-custom-url" name="rfc3161_custom_url"
+						class="large-text"
+						value="<?php echo esc_attr( $rfc3161_custom ); ?>"
+						placeholder="https://your-tsa.example.com/tsa" />
+					<p class="description">
+						<?php esc_html_e( 'Enter the full URL of your RFC 3161-compliant TSA endpoint. Must accept POST requests with Content-Type: application/timestamp-query.', 'archiviomd' ); ?>
+					</p>
+				</td>
+			</tr>
+
+			<!-- TSA username (optional, commercial TSAs) -->
+			<tr class="mdsm-anchor-rfc3161-field mdsm-rfc3161-auth-field">
+				<th scope="row">
+					<label for="mdsm-rfc3161-username"><?php esc_html_e( 'TSA Username', 'archiviomd' ); ?></label>
+				</th>
+				<td>
+					<input type="text" id="mdsm-rfc3161-username" name="rfc3161_username"
+						class="regular-text"
+						autocomplete="off"
+						value="<?php echo esc_attr( $rfc3161_username ); ?>"
+						placeholder="<?php esc_attr_e( 'Leave blank if not required', 'archiviomd' ); ?>" />
+					<p class="description">
+						<?php esc_html_e( 'HTTP Basic auth username. Leave blank for public TSAs (FreeTSA, Sectigo, DigiCert, GlobalSign — none require credentials).', 'archiviomd' ); ?>
+					</p>
+				</td>
+			</tr>
+
+			<!-- TSA password (optional, commercial TSAs) -->
+			<tr class="mdsm-anchor-rfc3161-field mdsm-rfc3161-auth-field">
+				<th scope="row">
+					<label for="mdsm-rfc3161-password"><?php esc_html_e( 'TSA Password', 'archiviomd' ); ?></label>
 				</th>
 				<td>
 					<input
 						type="password"
-						id="mdsm-token"
-						name="token"
+						id="mdsm-rfc3161-password"
+						name="rfc3161_password"
 						class="regular-text"
 						autocomplete="new-password"
-						placeholder="<?php echo $has_token ? esc_attr__( '(token saved — enter new value to replace)', 'archiviomd' ) : esc_attr__( 'Paste your PAT here', 'archiviomd' ); ?>"
+						placeholder="<?php echo $has_rfc3161_pass ? esc_attr__( '(password saved — enter new value to replace)', 'archiviomd' ) : esc_attr__( 'Leave blank if not required', 'archiviomd' ); ?>"
 						value=""
 					/>
-					<?php if ( $has_token ) : ?>
-						<span class="mdsm-token-saved"><?php esc_html_e( '✓ Token saved', 'archiviomd' ); ?></span>
+					<?php if ( $has_rfc3161_pass ) : ?>
+						<span class="mdsm-token-saved"><?php esc_html_e( '✓ Password saved', 'archiviomd' ); ?></span>
 					<?php endif; ?>
 					<p class="description">
-						<?php esc_html_e( 'The token is stored securely in the WordPress database and never printed in source code, JavaScript, or logs. Leave blank to keep the current token.', 'archiviomd' ); ?><br>
-						<strong><?php esc_html_e( 'GitHub:', 'archiviomd' ); ?></strong> <?php esc_html_e( 'Requires the "Contents" repository permission (read & write).', 'archiviomd' ); ?><br>
-						<strong><?php esc_html_e( 'GitLab:', 'archiviomd' ); ?></strong> <?php esc_html_e( 'Requires the "api" scope.', 'archiviomd' ); ?>
+						<?php esc_html_e( 'HTTP Basic auth password. Stored securely and never printed in source or logs. Leave blank to keep the current value.', 'archiviomd' ); ?>
 					</p>
-				</td>
-			</tr>
-
-			<!-- Repo Owner -->
-			<tr class="mdsm-anchor-git-field">
-				<th scope="row">
-					<label for="mdsm-repo-owner"><?php esc_html_e( 'Repository Owner / Group', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="text" id="mdsm-repo-owner" name="repo_owner" class="regular-text"
-						value="<?php echo esc_attr( $repo_owner ); ?>"
-						placeholder="<?php esc_attr_e( 'e.g. myusername or my-org', 'archiviomd' ); ?>" />
-					<p class="description"><?php esc_html_e( 'GitHub: your username or organisation. GitLab: your username or group path.', 'archiviomd' ); ?></p>
-				</td>
-			</tr>
-
-			<!-- Repo Name -->
-			<tr class="mdsm-anchor-git-field">
-				<th scope="row">
-					<label for="mdsm-repo-name"><?php esc_html_e( 'Repository Name', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="text" id="mdsm-repo-name" name="repo_name" class="regular-text"
-						value="<?php echo esc_attr( $repo_name ); ?>"
-						placeholder="<?php esc_attr_e( 'e.g. document-hashes', 'archiviomd' ); ?>" />
-				</td>
-			</tr>
-
-			<!-- Branch -->
-			<tr class="mdsm-anchor-git-field">
-				<th scope="row">
-					<label for="mdsm-branch"><?php esc_html_e( 'Branch', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="text" id="mdsm-branch" name="branch" class="regular-text"
-						value="<?php echo esc_attr( $branch ); ?>"
-						placeholder="main" />
-					<p class="description"><?php esc_html_e( 'The branch must already exist in the repository.', 'archiviomd' ); ?></p>
-				</td>
-			</tr>
-
-			<!-- Folder Path -->
-			<tr class="mdsm-anchor-git-field">
-				<th scope="row">
-					<label for="mdsm-folder-path"><?php esc_html_e( 'Folder Path', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="text" id="mdsm-folder-path" name="folder_path" class="regular-text"
-						value="<?php echo esc_attr( $folder_path ); ?>"
-						placeholder="hashes/YYYY-MM-DD" />
-					<p class="description">
-						<?php esc_html_e( 'Path within the repository where anchor files are stored. Supports date tokens: YYYY, MM, DD.', 'archiviomd' ); ?>
-						<?php esc_html_e( 'Example: hashes/YYYY-MM-DD → hashes/2025-06-15/', 'archiviomd' ); ?>
-					</p>
-				</td>
-			</tr>
-
-			<!-- Commit message -->
-			<tr class="mdsm-anchor-git-field">
-				<th scope="row">
-					<label for="mdsm-commit-message"><?php esc_html_e( 'Commit Message Template', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="text" id="mdsm-commit-message" name="commit_message" class="large-text"
-						value="<?php echo esc_attr( $commit_msg ); ?>"
-						placeholder="chore: anchor {doc_id}" />
-					<p class="description"><?php esc_html_e( 'Use {doc_id} as a placeholder for the document identifier.', 'archiviomd' ); ?></p>
-				</td>
-			</tr>
-
-			<tr>
-				<th scope="row">
-					<label for="mdsm-log-retention"><?php esc_html_e( 'Log Retention', 'archiviomd' ); ?></label>
-				</th>
-				<td>
-					<input type="number" id="mdsm-log-retention" name="log_retention_days" min="0" step="1"
-						value="<?php echo esc_attr( $log_retention ); ?>" style="width:90px;" />
-					<span class="description">
-						<?php esc_html_e( 'days (0 = keep forever). Older entries are pruned daily.', 'archiviomd' ); ?>
-					</span>
 				</td>
 			</tr>
 
@@ -320,6 +262,23 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 		<!-- Test result area -->
 		<div id="mdsm-test-result" class="mdsm-anchor-test-result" style="display:none;"></div>
 	</div>
+
+	<!-- RFC 3161 explainer card — shown only when rfc3161 is the active provider -->
+	<?php if ( $git_provider === 'rfc3161' ) : ?>
+	<div class="mdsm-anchor-card mdsm-anchor-card-info">
+		<h2 class="mdsm-anchor-card-title"><?php esc_html_e( 'About RFC 3161 Timestamps', 'archiviomd' ); ?></h2>
+		<p>
+			<?php esc_html_e( 'RFC 3161 is the IETF standard for Trusted Timestamping. When a document is anchored, ArchivioMD sends a cryptographic hash of the anchor record to the TSA. The TSA returns a signed TimeStampToken (TST) that proves the hash existed at a specific point in time, signed by the TSA\'s certificate.', 'archiviomd' ); ?>
+		</p>
+		<p>
+			<?php esc_html_e( 'The .tsr response files are stored in your WordPress uploads directory under meta-docs/tsr-timestamps/ and can be verified offline at any time using OpenSSL:', 'archiviomd' ); ?>
+		</p>
+		<pre style="background:#f6f7f7;padding:10px 14px;border-radius:4px;overflow-x:auto;font-size:12px;">openssl ts -verify -in response.tsr -queryfile request.tsq -CAfile tsa.crt</pre>
+		<p>
+			<?php esc_html_e( 'FreeTSA.org is free with no account required and is a good starting point. DigiCert, GlobalSign, and Sectigo all provide free public endpoints with no credentials needed. Use "Custom TSA" if your organisation operates its own RFC 3161-compliant TSA.', 'archiviomd' ); ?>
+		</p>
+	</div>
+	<?php endif; ?>
 
 
 	<!-- Queue management card -->
@@ -350,7 +309,7 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 		<h2 class="mdsm-anchor-card-title"><?php esc_html_e( 'Anchor Activity Log', 'archiviomd' ); ?></h2>
 
 		<?php
-		$log_counts    = MDSM_Anchor_Log::get_counts( 'git' );
+		$log_counts    = MDSM_Anchor_Log::get_counts( 'rfc3161' );
 		$is_rfc3161    = in_array( 'rfc3161', $active_providers, true );
 		$zip_available = class_exists( 'ZipArchive' );
 		$upload_dir    = wp_upload_dir();
@@ -378,9 +337,7 @@ $tsa_profiles      = MDSM_TSA_Profiles::all();
 			</span>
 		</div>
 
-		<!-- Log table: sits in its own scroll container that spans edge-to-edge of the card.
-		     margin+width trick: negative margins shift the div left/right, calc(100%+56px)
-		     gives it the extra width so overflow-x:auto has a real scroll range to work with. -->
+		<!-- Inline log table -->
 		<div id="mdsm-log-table-wrap" style="margin-top:16px;margin-left:-28px;width:calc(100% + 56px);overflow-x:auto;-webkit-overflow-scrolling:touch;">
 			<table id="mdsm-log-table" style="border-collapse:collapse;white-space:nowrap;font-size:12.5px;width:max-content;min-width:100%;">
 				<thead>

@@ -247,7 +247,7 @@ class MDSM_Archivio_Post {
 		require_once MDSM_PLUGIN_DIR . 'admin/archivio-post-page.php';
 	}
 
-	private function canonicalize_content( $content, $post_id, $author_id ) {
+	public function canonicalize_content( $content, $post_id, $author_id ) {
 		$content = str_replace( "\r\n", "\n", $content );
 		$content = str_replace( "\r",   "\n", $content );
 
@@ -331,6 +331,11 @@ class MDSM_Archivio_Post {
 				'auto_generate',
 				'failed'
 			);
+			return;
+		}
+
+		// Only log if the hash has actually changed (prevents double-logging from multiple save_post fires)
+		if ( $existing === $result['packed'] ) {
 			return;
 		}
 
@@ -697,6 +702,78 @@ class MDSM_Archivio_Post {
 			$file_content .= "canonical content above. It must match the hash shown.\n\n";
 			$file_content .= "Example:\n";
 			$file_content .= $std_cmd . "\n";
+		}
+
+		// ── RFC 3161 Timestamp cross-reference ──────────────────────────────────
+		// If a timestamp was issued for this post, append its details so the
+		// verification file is a self-contained evidence package.
+		// Guard: the anchor log table may not exist yet (timestamps never enabled,
+		// or plugin freshly installed). Also suppress wpdb errors around the query
+		// so a missing table never corrupts the JSON response on WP_DEBUG hosts.
+		if ( class_exists( 'MDSM_Anchor_Log' ) ) {
+			global $wpdb;
+			$log_table = MDSM_Anchor_Log::get_table_name();
+
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $log_table ) ) === $log_table ) {
+				$doc_id  = 'post-' . $post_id;
+
+				$suppress = $wpdb->suppress_errors( true );
+
+				$tsr_row = $wpdb->get_row(
+					$wpdb->prepare(
+						"SELECT anchor_url, created_at FROM {$log_table} WHERE document_id = %s AND provider = 'rfc3161' AND status = 'anchored' ORDER BY created_at DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$doc_id
+					)
+				);
+
+				$wpdb->suppress_errors( $suppress );
+
+				if ( $tsr_row ) {
+					$file_content .= "\n\nRFC 3161 Trusted Timestamp:\n";
+					$file_content .= "----------------------------\n";
+					$file_content .= "Anchored at (UTC): {$tsr_row->created_at}\n";
+					$file_content .= "TSR file:          {$tsr_row->anchor_url}\n";
+					$file_content .= "The .tsr file contains a signed timestamp token from a trusted TSA\n";
+					$file_content .= "proving this content hash existed at the time shown above.\n";
+					$file_content .= "Download the .tsr from the Anchor Activity Log to verify offline.\n";
+				}
+			}
+		}
+
+		// ── DSSE Envelope ────────────────────────────────────────────────────────
+		// When DSSE mode is on, include the full envelope so verifiers can
+		// independently confirm the signature using any DSSE-compatible tool.
+		$dsse_raw = get_post_meta( $post_id, MDSM_Ed25519_Signing::DSSE_META_KEY, true );
+		if ( $dsse_raw ) {
+			$dsse_envelope = json_decode( $dsse_raw, true );
+			if ( is_array( $dsse_envelope ) ) {
+				// Verify the envelope server-side and report the result.
+				$dsse_result  = MDSM_Ed25519_Signing::verify_post_dsse( $post_id );
+				$dsse_valid   = ! is_wp_error( $dsse_result ) && ! empty( $dsse_result['valid'] );
+
+				$file_content .= "\n\nDSSE Envelope (Dead Simple Signing Envelope):\n";
+				$file_content .= "----------------------------------------------\n";
+				$file_content .= "Spec:     https://github.com/secure-systems-lab/dsse\n";
+				$file_content .= "Status:   " . ( $dsse_valid ? 'VALID — signature verified server-side' : 'UNVERIFIED — could not confirm signature' ) . "\n";
+				$file_content .= "Payload type: " . ( $dsse_envelope['payloadType'] ?? '' ) . "\n";
+
+				if ( ! empty( $dsse_envelope['signatures'][0]['keyid'] ) ) {
+					$file_content .= "Key fingerprint (SHA-256): " . $dsse_envelope['signatures'][0]['keyid'] . "\n";
+					$file_content .= "Public key URL: " . home_url( '/.well-known/ed25519-pubkey.txt' ) . "\n";
+				}
+
+				$file_content .= "\nFull envelope (JSON):\n";
+				$file_content .= wp_json_encode( $dsse_envelope, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n";
+
+				$file_content .= "\nOffline verification (openssl + custom PAE reconstruction):\n";
+				$file_content .= "  1. Decode the base64 'payload' field to recover the canonical message.\n";
+				$file_content .= "  2. Rebuild PAE: \"DSSEv1 \" + len(payloadType) + \" \" + payloadType\n";
+				$file_content .= "                           + \" \" + len(payload)     + \" \" + payload\n";
+				$file_content .= "     (lengths are byte lengths as decimal strings)\n";
+				$file_content .= "  3. Base64-decode the 'sig' field to raw bytes.\n";
+				$file_content .= "  4. Fetch the public key hex from the URL above, convert to raw bytes.\n";
+				$file_content .= "  5. Verify: sodium_crypto_sign_verify_detached(sig_bytes, PAE, pubkey_bytes)\n";
+			}
 		}
 
 		wp_send_json_success( array(

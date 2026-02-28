@@ -170,7 +170,7 @@ $seo_total = count($seo_files);
                                             <?php if (!empty($metadata['changelog'])) : ?>
                                                 <button class="mdsm-view-changelog" data-file-name="<?php echo esc_attr($file_name); ?>">
                                                     <span class="dashicons dashicons-list-view"></span>
-                                                    View Change Log (<?php echo count($metadata['changelog']); ?> entries)
+                                    View Change Log (<?php echo absint( count( $metadata['changelog'] ) ); ?> entries)
                                                 </button>
                                             <?php endif; ?>
                                         </div>

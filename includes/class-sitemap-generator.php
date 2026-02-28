@@ -292,34 +292,44 @@ class MDSM_Sitemap_Generator {
      */
     public function get_sitemap_info() {
         $info = array();
-        
-        // Check for single sitemap
-        $single_sitemap = ABSPATH . 'sitemap.xml';
-        if (file_exists($single_sitemap)) {
+
+        $upload_dir = wp_upload_dir();
+        $upload_base = $upload_dir['basedir'] . '/meta-docs/';
+
+        // Check for single sitemap — root first, then uploads fallback.
+        $single_root   = ABSPATH . 'sitemap.xml';
+        $single_upload = $upload_base . 'sitemap.xml';
+        $single_sitemap = file_exists($single_root) ? $single_root : (file_exists($single_upload) ? $single_upload : false);
+
+        if ($single_sitemap) {
             $info['type'] = 'small';
             $info['main_file'] = 'sitemap.xml';
             $info['url'] = get_site_url() . '/sitemap.xml';
             $info['last_modified'] = date('Y-m-d H:i:s', filemtime($single_sitemap));
             return $info;
         }
-        
-        // Check for sitemap index
-        $sitemap_index = ABSPATH . 'sitemap_index.xml';
-        if (file_exists($sitemap_index)) {
+
+        // Check for sitemap index — root first, then uploads fallback.
+        $index_root   = ABSPATH . 'sitemap_index.xml';
+        $index_upload = $upload_base . 'sitemap_index.xml';
+        $sitemap_index = file_exists($index_root) ? $index_root : (file_exists($index_upload) ? $index_upload : false);
+
+        if ($sitemap_index) {
             $info['type'] = 'large';
             $info['main_file'] = 'sitemap_index.xml';
             $info['url'] = get_site_url() . '/sitemap_index.xml';
             $info['last_modified'] = date('Y-m-d H:i:s', filemtime($sitemap_index));
-            
-            // Count sitemap files
-            $files = glob(ABSPATH . 'sitemap-*.xml');
-            $info['file_count'] = count($files) + 1; // +1 for index
-            
+
+            // Count sitemap files — check both locations.
+            $files_root   = glob(ABSPATH . 'sitemap-*.xml') ?: array();
+            $files_upload = glob($upload_base . 'sitemap-*.xml') ?: array();
+            $info['file_count'] = count($files_root) + count($files_upload) + 1; // +1 for index
+
             return $info;
         }
-        
+
         return array(
-            'type' => 'none',
+            'type'    => 'none',
             'message' => 'No sitemap found'
         );
     }

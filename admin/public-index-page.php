@@ -14,14 +14,14 @@ if (isset($_POST['mdsm_save_public_index']) && check_admin_referer('mdsm_save_pu
         $enabled = isset( $_POST['index_output_mode'] ) && sanitize_text_field( wp_unslash( $_POST['index_output_mode'] ) ) === 'page';
         
         // Get page ID
-        $page_id = isset($_POST['index_page_id']) ? intval($_POST['index_page_id']) : 0;
+        $page_id = isset( $_POST['index_page_id'] ) ? absint( $_POST['index_page_id'] ) : 0;
         
         // Get selected documents
         $public_docs = array();
-        if (isset($_POST['public_docs']) && is_array($_POST['public_docs'])) {
+        if ( isset( $_POST['public_docs'] ) && is_array( $_POST['public_docs'] ) ) {
             foreach ( wp_unslash( $_POST['public_docs'] ) as $filename ) {
-                $filename = sanitize_text_field( wp_unslash( $filename ) );
-                $public_docs[sanitize_text_field($filename)] = true;
+                $filename              = sanitize_text_field( $filename );
+                $public_docs[ $filename ] = true;
             }
         }
         

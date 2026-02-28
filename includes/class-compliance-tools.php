@@ -45,6 +45,9 @@ class MDSM_Compliance_Tools {
         add_action('wp_ajax_mdsm_download_csv', array($this, 'ajax_download_csv'));
         add_action('wp_ajax_mdsm_download_backup', array($this, 'ajax_download_backup'));
         add_action('wp_ajax_mdsm_save_uninstall_cleanup', array($this, 'ajax_save_uninstall_cleanup'));
+        add_action('wp_ajax_mdsm_export_compliance_json',  array($this, 'ajax_export_compliance_json'));
+        add_action('wp_ajax_mdsm_download_compliance_json', array($this, 'ajax_download_compliance_json'));
+        add_action('wp_ajax_mdsm_download_export_sig', array($this, 'ajax_download_export_sig'));
         
         // Add admin notice about backups
         add_action('admin_notices', array($this, 'show_backup_notice'));
@@ -110,7 +113,7 @@ class MDSM_Compliance_Tools {
         <div class="notice notice-info is-dismissible" id="mdsm-backup-notice">
             <p><strong>ArchivioMD:</strong> Metadata (UUIDs, checksums, changelogs) is stored in your WordPress database. 
             Regular database backups are required for complete data protection. 
-            <a href="<?php echo admin_url('tools.php?page=archivio-md-compliance'); ?>">View compliance tools</a></p>
+            <a href="<?php echo esc_url( admin_url('tools.php?page=archivio-md-compliance') ); ?>">View compliance tools</a></p>
         </div>
         <?php
         wp_add_inline_script(
@@ -161,15 +164,27 @@ class MDSM_Compliance_Tools {
             $filepath = $temp_dir . '/' . $filename;
             
             file_put_contents($filepath, $csv_data);
-            
+
+            // Sign the export and write a sidecar .sig.json file.
+            $sig_result = $this->sign_export_file( $filepath, $filename, 'metadata_csv' );
+
             // Create download URL with nonce
             $download_nonce = wp_create_nonce('mdsm_download_csv_' . $filename);
             $download_url = admin_url('admin-ajax.php?action=mdsm_download_csv&file=' . urlencode($filename) . '&nonce=' . $download_nonce);
-            
-            wp_send_json_success(array(
+
+            $response = array(
                 'download_url' => $download_url,
-                'filename' => $filename
-            ));
+                'filename'     => $filename,
+            );
+
+            if ( $sig_result ) {
+                $sig_filename      = basename( $sig_result );
+                $sig_nonce         = wp_create_nonce( 'mdsm_download_export_sig_' . $sig_filename );
+                $response['sig_url']      = admin_url( 'admin-ajax.php?action=mdsm_download_export_sig&file=' . urlencode( $sig_filename ) . '&nonce=' . $sig_nonce );
+                $response['sig_filename'] = $sig_filename;
+            }
+
+            wp_send_json_success( $response );
             
         } catch (Exception $e) {
             wp_send_json_error(array('message' => $e->getMessage()));
@@ -264,7 +279,7 @@ class MDSM_Compliance_Tools {
      * AJAX: Download CSV file
      */
     public function ajax_download_csv() {
-        $filename = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
+        $filename = isset($_GET['file']) ? sanitize_file_name( wp_unslash( $_GET['file'] ) ) : '';
         $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
         
         if (empty($filename) || !wp_verify_nonce($nonce, 'mdsm_download_csv_' . $filename)) {
@@ -319,11 +334,23 @@ class MDSM_Compliance_Tools {
             $filename = basename($backup_file);
             $download_nonce = wp_create_nonce('mdsm_download_backup_' . $filename);
             $download_url = admin_url('admin-ajax.php?action=mdsm_download_backup&file=' . urlencode($filename) . '&nonce=' . $download_nonce);
-            
-            wp_send_json_success(array(
+
+            // Sign the backup archive and write a sidecar .sig.json file.
+            $sig_result = $this->sign_export_file( $backup_file, $filename, 'backup_zip' );
+
+            $response = array(
                 'download_url' => $download_url,
-                'filename' => $filename
-            ));
+                'filename'     => $filename,
+            );
+
+            if ( $sig_result ) {
+                $sig_filename      = basename( $sig_result );
+                $sig_nonce         = wp_create_nonce( 'mdsm_download_export_sig_' . $sig_filename );
+                $response['sig_url']      = admin_url( 'admin-ajax.php?action=mdsm_download_export_sig&file=' . urlencode( $sig_filename ) . '&nonce=' . $sig_nonce );
+                $response['sig_filename'] = $sig_filename;
+            }
+
+            wp_send_json_success( $response );
             
         } catch (Exception $e) {
             wp_send_json_error(array('message' => $e->getMessage()));
@@ -509,7 +536,7 @@ class MDSM_Compliance_Tools {
      * AJAX: Download backup file
      */
     public function ajax_download_backup() {
-        $filename = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
+        $filename = isset($_GET['file']) ? sanitize_file_name( wp_unslash( $_GET['file'] ) ) : '';
         $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
         
         if (empty($filename) || !wp_verify_nonce($nonce, 'mdsm_download_backup_' . $filename)) {
@@ -678,7 +705,7 @@ class MDSM_Compliance_Tools {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $backup_id = isset($_POST['backup_id']) ? sanitize_text_field($_POST['backup_id']) : '';
+        $backup_id = isset( $_POST['backup_id'] ) ? sanitize_text_field( wp_unslash( $_POST['backup_id'] ) ) : '';
         
         if (empty($backup_id)) {
             wp_send_json_error(array('message' => 'Invalid backup ID'));
@@ -948,4 +975,498 @@ class MDSM_Compliance_Tools {
             ));
         }
     }
+
+	// ── Compliance JSON Export ────────────────────────────────────────────────
+
+	/**
+	 * AJAX: Generate a structured compliance JSON export and return a signed
+	 * download URL.  All data is assembled server-side and written to a temp
+	 * file; the browser then follows the download URL to retrieve it.
+	 */
+	public function ajax_export_compliance_json() {
+		check_ajax_referer( 'mdsm_export_compliance_json', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'archiviomd' ) ) );
+		}
+
+		try {
+			$json_data = $this->generate_compliance_json();
+
+			$upload_dir = wp_upload_dir();
+			$temp_dir   = $upload_dir['basedir'] . '/archivio-md-temp';
+
+			if ( ! file_exists( $temp_dir ) ) {
+				wp_mkdir_p( $temp_dir );
+			}
+
+			$timestamp = gmdate( 'Y-m-d_H-i-s' );
+			$filename  = 'archiviomd-compliance-export-' . $timestamp . '.json';
+			$filepath  = $temp_dir . '/' . $filename;
+
+			file_put_contents( $filepath, $json_data );
+
+			// Sign the export and write a sidecar .sig.json file.
+			$sig_result = $this->sign_export_file( $filepath, $filename, 'compliance_json' );
+
+			$download_nonce = wp_create_nonce( 'mdsm_download_compliance_json_' . $filename );
+			$download_url   = admin_url(
+				'admin-ajax.php?action=mdsm_download_compliance_json&file='
+				. urlencode( $filename )
+				. '&nonce=' . $download_nonce
+			);
+
+			$response = array(
+				'download_url' => $download_url,
+				'filename'     => $filename,
+			);
+
+			if ( $sig_result ) {
+				$sig_filename             = basename( $sig_result );
+				$sig_nonce                = wp_create_nonce( 'mdsm_download_export_sig_' . $sig_filename );
+				$response['sig_url']      = admin_url( 'admin-ajax.php?action=mdsm_download_export_sig&file=' . urlencode( $sig_filename ) . '&nonce=' . $sig_nonce );
+				$response['sig_filename'] = $sig_filename;
+			}
+
+			wp_send_json_success( $response );
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX: Serve the pre-generated compliance JSON temp file and delete it
+	 * afterwards.  Uses the same signed-nonce pattern as ajax_download_csv().
+	 */
+	public function ajax_download_compliance_json() {
+		$filename = isset( $_GET['file'] ) ? sanitize_file_name( wp_unslash( $_GET['file'] ) ) : '';
+		$nonce    = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
+
+		if ( empty( $filename ) || ! wp_verify_nonce( $nonce, 'mdsm_download_compliance_json_' . $filename ) ) {
+			wp_die( esc_html__( 'Invalid request.', 'archiviomd' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'archiviomd' ) );
+		}
+
+		$upload_dir = wp_upload_dir();
+		$filepath   = $upload_dir['basedir'] . '/archivio-md-temp/' . $filename;
+
+		if ( ! file_exists( $filepath ) ) {
+			wp_die( esc_html__( 'Export file not found. Please generate a new export.', 'archiviomd' ) );
+		}
+
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Content-Length: ' . filesize( $filepath ) );
+		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+		header( 'Pragma: no-cache' );
+		header( 'Expires: 0' );
+
+		readfile( $filepath ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		@unlink( $filepath );
+		exit;
+	}
+
+	/**
+	 * Build the full compliance JSON string.
+	 *
+	 * Structure:
+	 *   export_meta   – generation info, plugin version, site URL
+	 *   posts[]       – each published post that has an _archivio_post_hash,
+	 *                   with hash_history[] from archivio_post_audit and
+	 *                   anchor_log[]  from archivio_anchor_log
+	 *   documents[]   – each managed Markdown document with its changelog[]
+	 *                   and anchor_log[]
+	 *
+	 * Posts are processed in batches of 50 to avoid loading thousands of
+	 * WP_Post objects into memory at once.
+	 *
+	 * @return string JSON-encoded string (UTF-8, pretty-printed).
+	 */
+	private function generate_compliance_json() {
+		global $wpdb;
+
+		// ── Export meta ──────────────────────────────────────────────────────
+		$export = array(
+			'export_meta' => array(
+				'generated_at'   => gmdate( 'Y-m-d\TH:i:s\Z' ),
+				'site_url'       => get_site_url(),
+				'plugin_version' => MDSM_VERSION,
+				'export_version' => '1',
+			),
+			'posts'       => array(),
+			'documents'   => array(),
+		);
+
+		$audit_table  = $wpdb->prefix . 'archivio_post_audit';
+		$anchor_table = MDSM_Anchor_Log::get_table_name();
+		$upload_dir   = wp_upload_dir();
+
+		// ── Posts — batch 50 at a time ───────────────────────────────────────
+		$offset     = 0;
+		$batch_size = 50;
+
+		do {
+			$post_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT DISTINCT post_id FROM {$wpdb->postmeta}
+					 WHERE meta_key = '_archivio_post_hash'
+					 ORDER BY post_id ASC
+					 LIMIT %d OFFSET %d",
+					$batch_size,
+					$offset
+				)
+			);
+
+			foreach ( (array) $post_ids as $post_id ) {
+				$post_id = (int) $post_id;
+				$post    = get_post( $post_id );
+
+				if ( ! $post ) {
+					continue;
+				}
+
+				$stored_packed = get_post_meta( $post_id, '_archivio_post_hash', true );
+				$unpacked      = MDSM_Hash_Helper::unpack( $stored_packed );
+
+				// Current hash.
+				$current_hash = array(
+					'algorithm' => MDSM_Hash_Helper::algorithm_label( $unpacked['algorithm'] ),
+					'mode'      => MDSM_Hash_Helper::mode_label( $unpacked['mode'] ),
+					'value'     => $unpacked['hash'],
+				);
+
+				// Hash history from audit table.
+				$audit_rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT id, event_type, result, timestamp, author_id, hash, algorithm, mode
+						 FROM {$audit_table}
+						 WHERE post_id = %d
+						 ORDER BY timestamp ASC",
+						$post_id
+					),
+					ARRAY_A
+				);
+
+				$hash_history = array();
+				foreach ( (array) $audit_rows as $row ) {
+					$row_unpacked = MDSM_Hash_Helper::unpack( $row['hash'] );
+					$algo         = ! empty( $row['algorithm'] ) ? $row['algorithm'] : $row_unpacked['algorithm'];
+					$mode         = ! empty( $row['mode'] )      ? $row['mode']      : $row_unpacked['mode'];
+
+					$hash_history[] = array(
+						'audit_id'   => (int) $row['id'],
+						'event_type' => $row['event_type'],
+						'result'     => $row['result'],
+						'timestamp'  => $row['timestamp'],
+						'author_id'  => (int) $row['author_id'],
+						'algorithm'  => MDSM_Hash_Helper::algorithm_label( $algo ),
+						'mode'       => MDSM_Hash_Helper::mode_label( $mode ),
+						'hash'       => $row_unpacked['hash'],
+					);
+				}
+
+				// Anchor log entries for this post.
+				$anchor_rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM {$anchor_table}
+						 WHERE document_id = %s
+						 ORDER BY created_at ASC",
+						'post-' . $post_id
+					),
+					ARRAY_A
+				);
+
+				$anchor_log = $this->build_anchor_log_entries( $anchor_rows, $upload_dir );
+
+				$export['posts'][] = array(
+					'post_id'      => $post_id,
+					'title'        => $post->post_title,
+					'url'          => get_permalink( $post_id ),
+					'post_type'    => $post->post_type,
+					'post_status'  => $post->post_status,
+					'current_hash' => $current_hash,
+					'hash_history' => $hash_history,
+					'anchor_log'   => $anchor_log,
+				);
+			}
+
+			$offset += $batch_size;
+
+		} while ( count( $post_ids ) === $batch_size );
+
+		// ── Documents ────────────────────────────────────────────────────────
+		$file_manager     = new MDSM_File_Manager();
+		$metadata_manager = new MDSM_Document_Metadata();
+		$meta_files       = mdsm_get_meta_files();
+		$custom_files     = mdsm_get_custom_markdown_files();
+
+		// Merge both file sets into a flat list for uniform processing.
+		$all_files = array();
+		foreach ( $meta_files as $files ) {
+			foreach ( $files as $file_name => $description ) {
+				$all_files[ $file_name ] = $description;
+			}
+		}
+		foreach ( $custom_files as $file_name => $description ) {
+			$all_files[ $file_name ] = $description;
+		}
+
+		foreach ( $all_files as $file_name => $description ) {
+			if ( ! $file_manager->file_exists( 'meta', $file_name ) ) {
+				continue;
+			}
+
+			$metadata = $metadata_manager->get_metadata( $file_name );
+
+			if ( empty( $metadata['uuid'] ) ) {
+				continue;
+			}
+
+			// Anchor log entries keyed by UUID.
+			$anchor_rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$anchor_table}
+					 WHERE document_id = %s
+					 ORDER BY created_at ASC",
+					$metadata['uuid']
+				),
+				ARRAY_A
+			);
+
+			$anchor_log = $this->build_anchor_log_entries( $anchor_rows, $upload_dir );
+
+			// Normalise changelog entries.
+			$changelog = array();
+			foreach ( (array) $metadata['changelog'] as $entry ) {
+				$cl_unpacked = MDSM_Hash_Helper::unpack( $entry['checksum'] ?? '' );
+				$changelog[] = array(
+					'timestamp' => $entry['timestamp'] ?? '',
+					'action'    => $entry['action'] ?? '',
+					'user_id'   => (int) ( $entry['user_id'] ?? 0 ),
+					'algorithm' => MDSM_Hash_Helper::algorithm_label( $entry['algorithm'] ?? $cl_unpacked['algorithm'] ),
+					'mode'      => MDSM_Hash_Helper::mode_label( $entry['mode'] ?? $cl_unpacked['mode'] ),
+					'checksum'  => $cl_unpacked['hash'] ?? $entry['checksum'],
+				);
+			}
+
+			$export['documents'][] = array(
+				'uuid'             => $metadata['uuid'],
+				'filename'         => $file_name,
+				'description'      => (string) $description,
+				'last_modified'    => $metadata['modified_at'] ?? '',
+				'current_checksum' => $metadata['checksum'] ?? '',
+				'changelog'        => $changelog,
+				'anchor_log'       => $anchor_log,
+			);
+		}
+
+		// Pretty-print with JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE.
+		$flags = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
+		return wp_json_encode( $export, $flags );
+	}
+
+	/**
+	 * Convert raw anchor log DB rows into the normalised structure used in
+	 * both post and document entries.  For RFC 3161 entries, reads the
+	 * sidecar .manifest.json from the filesystem if it exists and inlines it.
+	 *
+	 * @param array[] $rows       Rows from ARRAY_A wpdb query.
+	 * @param array   $upload_dir wp_upload_dir() result.
+	 * @return array[]
+	 */
+	private function build_anchor_log_entries( array $rows, array $upload_dir ) {
+		$entries = array();
+
+		foreach ( $rows as $row ) {
+			$entry = array(
+				'log_id'         => (int) $row['id'],
+				'status'         => $row['status'],
+				'provider'       => $row['provider'],
+				'anchored_at'    => $row['created_at'] . ' UTC',
+				'hash_algorithm' => strtoupper( $row['hash_algorithm'] ),
+				'integrity_mode' => $row['integrity_mode'],
+				'hash_value'     => $row['hash_value'],
+				'attempt_number' => (int) $row['attempt_number'],
+				'job_id'         => $row['job_id'],
+				'anchor_url'     => $row['anchor_url'],
+				'http_status'    => (int) $row['http_status'],
+				'error_message'  => $row['error_message'],
+			);
+
+			// For RFC 3161 entries, inline the manifest JSON sidecar when available.
+			// The TSR URL is the public URL; derive the filesystem path from it.
+			if ( 'rfc3161' === $row['provider'] && ! empty( $row['anchor_url'] ) ) {
+				$tsr_url  = $row['anchor_url'];
+				$base_url = trailingslashit( $upload_dir['baseurl'] );
+				$base_dir = trailingslashit( $upload_dir['basedir'] );
+
+				if ( strpos( $tsr_url, $base_url ) === 0 ) {
+					$relative      = substr( $tsr_url, strlen( $base_url ) );
+					$tsr_fs_path   = $base_dir . $relative;
+					$manifest_path = preg_replace( '/\.tsr$/', '.manifest.json', $tsr_fs_path );
+
+					if ( $manifest_path && file_exists( $manifest_path ) ) {
+						$raw_manifest = file_get_contents( $manifest_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+						$manifest     = json_decode( $raw_manifest, true );
+						if ( is_array( $manifest ) ) {
+							$entry['tsr_manifest'] = $manifest;
+						}
+					}
+				}
+			}
+
+		$entries[] = $entry;
+		}
+
+		return $entries;
+	}
+
+	// ── Export Signing ───────────────────────────────────────────────────────
+
+	/**
+	 * Generate a signature envelope for an export file and write it as a
+	 * sidecar `{filename}.sig.json` in the same temp directory.
+	 *
+	 * The envelope always contains a SHA-256 integrity hash of the file.
+	 * If Ed25519 signing is configured and enabled, a detached signature is
+	 * added over a deterministic canonical message that binds the hash to
+	 * the export type, filename, timestamp, and site URL — preventing the
+	 * signature from being reused against a different file or context.
+	 *
+	 * Canonical signing message format (newline-separated, UTF-8):
+	 *   archiviomd-export-v1
+	 *   {export_type}
+	 *   {filename}
+	 *   {generated_at}    ← ISO 8601 UTC
+	 *   {site_url}
+	 *   {sha256_hex}      ← SHA-256 of the raw file bytes
+	 *
+	 * @param  string $filepath    Absolute path to the file on disk.
+	 * @param  string $filename    Base filename (used in envelope + canonical message).
+	 * @param  string $export_type Short slug: 'metadata_csv', 'compliance_json', or 'backup_zip'.
+	 * @return string|false        Absolute path of the written .sig.json, or false on failure.
+	 */
+	private function sign_export_file( string $filepath, string $filename, string $export_type ) {
+		if ( ! file_exists( $filepath ) ) {
+			return false;
+		}
+
+		$file_bytes   = file_get_contents( $filepath ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$sha256       = hash( 'sha256', $file_bytes );
+		$generated_at = gmdate( 'Y-m-d\TH:i:s\Z' );
+		$site_url     = get_site_url();
+		$current_user = wp_get_current_user();
+
+		// ── Build canonical signing message ─────────────────────────────────
+		$canonical = implode( "\n", array(
+			'archiviomd-export-v1',
+			$export_type,
+			$filename,
+			$generated_at,
+			$site_url,
+			$sha256,
+		) );
+
+		// ── Assemble the envelope ────────────────────────────────────────────
+		$envelope = array(
+			'archiviomd_export_sig' => '1',
+			'export_type'           => $export_type,
+			'filename'              => $filename,
+			'generated_at'          => $generated_at,
+			'site_url'              => $site_url,
+			'plugin_version'        => MDSM_VERSION,
+			'generated_by_user_id'  => $current_user instanceof WP_User ? $current_user->ID : 0,
+			'file_integrity'        => array(
+				'algorithm' => 'sha256',
+				'value'     => $sha256,
+			),
+		);
+
+		// ── Ed25519 signing (optional, degrades gracefully) ──────────────────
+		$signing_available = (
+			class_exists( 'MDSM_Ed25519_Signing' )
+			&& MDSM_Ed25519_Signing::is_sodium_available()
+			&& MDSM_Ed25519_Signing::is_private_key_defined()
+		);
+
+		if ( $signing_available ) {
+			$sig = MDSM_Ed25519_Signing::sign( $canonical );
+
+			if ( ! is_wp_error( $sig ) ) {
+				$envelope['ed25519'] = array(
+					'signature'      => $sig,
+					'signed_at'      => $generated_at,
+					'canonical_msg'  => $canonical,
+					'public_key_url' => trailingslashit( $site_url ) . '.well-known/ed25519-pubkey.txt',
+				);
+				$envelope['signing_status'] = 'signed';
+			} else {
+				$envelope['signing_status']        = 'error';
+				$envelope['signing_status_detail'] = $sig->get_error_message();
+			}
+		} elseif ( class_exists( 'MDSM_Ed25519_Signing' ) && MDSM_Ed25519_Signing::is_mode_enabled() ) {
+			// Mode is on but key/sodium is missing — surface it clearly.
+			$envelope['signing_status']        = 'unavailable';
+			$envelope['signing_status_detail'] = 'Ed25519 mode is enabled but ext-sodium or the private key constant is missing.';
+		} else {
+			// Ed25519 not configured — integrity hash only.
+			$envelope['signing_status']        = 'unsigned';
+			$envelope['signing_status_detail'] = 'Ed25519 signing is not configured. Configure it in Archivio Post → Settings to enable signed exports.';
+		}
+
+		// ── Write sidecar ────────────────────────────────────────────────────
+		$sig_path = $filepath . '.sig.json';
+		$written  = file_put_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions
+			$sig_path,
+			wp_json_encode( $envelope, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+		);
+
+		return $written !== false ? $sig_path : false;
+	}
+
+	/**
+	 * AJAX: Serve a pre-generated export signature sidecar (.sig.json) and
+	 * delete it afterwards.  Mirrors the pattern of ajax_download_csv().
+	 */
+	public function ajax_download_export_sig() {
+		$filename = isset( $_GET['file'] ) ? sanitize_file_name( wp_unslash( $_GET['file'] ) ) : '';
+		$nonce    = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
+
+		if ( empty( $filename ) || ! wp_verify_nonce( $nonce, 'mdsm_download_export_sig_' . $filename ) ) {
+			wp_die( esc_html__( 'Invalid request.', 'archiviomd' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'archiviomd' ) );
+		}
+
+		// Enforce .sig.json extension — do not serve arbitrary temp files.
+		if ( substr( $filename, -9 ) !== '.sig.json' ) {
+			wp_die( esc_html__( 'Invalid file type.', 'archiviomd' ) );
+		}
+
+		$upload_dir = wp_upload_dir();
+		$filepath   = $upload_dir['basedir'] . '/archivio-md-temp/' . $filename;
+
+		if ( ! file_exists( $filepath ) ) {
+			wp_die( esc_html__( 'Signature file not found. Please regenerate the export.', 'archiviomd' ) );
+		}
+
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Content-Length: ' . filesize( $filepath ) );
+		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+		header( 'Pragma: no-cache' );
+		header( 'Expires: 0' );
+
+		readfile( $filepath ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		wp_delete_file( $filepath );
+		exit;
+	}
 }

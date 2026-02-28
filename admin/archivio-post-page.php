@@ -33,7 +33,7 @@ $sha3_available    = MDSM_Hash_Helper::is_sha3_available();
 $hmac_status = MDSM_Hash_Helper::hmac_status();
 
 // Active tab
-$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'settings';
+$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'settings';
 ?>
 
 <div class="wrap archivio-post-admin">
@@ -181,6 +181,225 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 			</div>
 		</div>
 
+		<!-- ── Ed25519 Document Signing ─────────────────────────────── -->
+		<h2><?php esc_html_e( 'Ed25519 Document Signing', 'archiviomd' ); ?></h2>
+
+		<div style="background:#fff;padding:20px;border:1px solid #ccd0d4;border-radius:4px;margin-bottom:30px;">
+
+			<?php
+			$ed25519_status = MDSM_Ed25519_Signing::status();
+
+			// ── Status banner ────────────────────────────────────────────
+			if ( $ed25519_status['mode_enabled'] ) {
+				if ( $ed25519_status['notice_level'] === 'error' ) {
+					echo '<div style="padding:12px 15px;background:#fde8e8;border-left:4px solid #d73a49;border-radius:4px;margin-bottom:15px;">';
+					echo '<strong>' . esc_html__( 'Error:', 'archiviomd' ) . '</strong> ';
+					echo wp_kses( $ed25519_status['notice_message'], array( 'code' => array() ) );
+					echo '</div>';
+				} elseif ( $ed25519_status['notice_level'] === 'warning' ) {
+					echo '<div style="padding:12px 15px;background:#fff8e5;border-left:4px solid #dba617;border-radius:4px;margin-bottom:15px;">';
+					echo '<strong>' . esc_html__( 'Warning:', 'archiviomd' ) . '</strong> ';
+					echo esc_html( $ed25519_status['notice_message'] );
+					echo '</div>';
+				} else {
+					echo '<div style="padding:12px 15px;background:#edfaed;border-left:4px solid #0a7537;border-radius:4px;margin-bottom:15px;">';
+					echo '<strong>✓ </strong>';
+					echo esc_html( $ed25519_status['notice_message'] );
+					echo '</div>';
+				}
+			}
+			?>
+
+			<p style="margin-top:0;">
+				<?php esc_html_e( 'When enabled, posts, pages, and media are automatically signed on save using Ed25519 (PHP sodium). The private key lives in wp-config.php — never in the database. The public key is published at /.well-known/ed25519-pubkey.txt so anyone can verify content came from your site.', 'archiviomd' ); ?>
+			</p>
+
+			<!-- Key status checklist — same layout as HMAC -->
+			<table style="border-collapse:collapse;margin-bottom:20px;">
+				<tr>
+					<td style="padding:4px 10px 4px 0;">
+						<?php if ( $ed25519_status['private_key_defined'] ) : ?>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'Private key defined', 'archiviomd' ); ?></span>
+						<?php else : ?>
+							<span style="color:#d73a49;font-weight:600;">✗ <?php esc_html_e( 'Private key missing', 'archiviomd' ); ?></span>
+						<?php endif; ?>
+					</td>
+					<td style="color:#646970;font-size:12px;">
+						<code><?php echo esc_html( MDSM_Ed25519_Signing::PRIVATE_KEY_CONSTANT ); ?></code>
+						<?php esc_html_e( 'in wp-config.php', 'archiviomd' ); ?>
+					</td>
+				</tr>
+				<tr>
+					<td style="padding:4px 10px 4px 0;">
+						<?php if ( $ed25519_status['public_key_defined'] ) : ?>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'Public key defined', 'archiviomd' ); ?></span>
+						<?php else : ?>
+							<span style="color:#646970;">— <?php esc_html_e( 'Public key not set', 'archiviomd' ); ?></span>
+						<?php endif; ?>
+					</td>
+					<td style="color:#646970;font-size:12px;">
+						<code><?php echo esc_html( MDSM_Ed25519_Signing::PUBLIC_KEY_CONSTANT ); ?></code>
+						<?php esc_html_e( 'in wp-config.php', 'archiviomd' ); ?>
+					</td>
+				</tr>
+				<tr>
+					<td style="padding:4px 10px 4px 0;">
+						<?php if ( $ed25519_status['sodium_available'] ) : ?>
+							<span style="color:#0a7537;font-weight:600;">✓ <?php esc_html_e( 'sodium_crypto_sign() available', 'archiviomd' ); ?></span>
+						<?php else : ?>
+							<span style="color:#d73a49;font-weight:600;">✗ <?php esc_html_e( 'sodium_crypto_sign() not available', 'archiviomd' ); ?></span>
+						<?php endif; ?>
+					</td>
+					<td style="color:#646970;font-size:12px;"><?php esc_html_e( 'Built-in PHP 7.2+ (ext-sodium)', 'archiviomd' ); ?></td>
+				</tr>
+			</table>
+
+			<?php if ( ! $ed25519_status['private_key_defined'] ) : ?>
+			<!-- wp-config.php keypair snippet — shown only when keys are missing -->
+			<div style="background:#f5f5f5;padding:12px 15px;border-radius:4px;margin-bottom:20px;border:1px solid #ddd;">
+				<p style="margin:0 0 8px;font-weight:600;"><?php esc_html_e( 'Add this to your wp-config.php (before "stop editing"):', 'archiviomd' ); ?></p>
+				<pre style="margin:0;font-size:12px;overflow-x:auto;white-space:pre-wrap;">// Ed25519 keypair — generate once with sodium_crypto_sign_keypair()
+define( 'ARCHIVIOMD_ED25519_PRIVATE_KEY', 'paste-128-char-hex-private-key-here' );
+define( 'ARCHIVIOMD_ED25519_PUBLIC_KEY',  'paste-64-char-hex-public-key-here' );</pre>
+				<p style="margin:10px 0 4px;font-weight:600;font-size:12px;"><?php esc_html_e( 'Generate a keypair (PHP CLI):', 'archiviomd' ); ?></p>
+				<pre style="margin:0;font-size:12px;overflow-x:auto;white-space:pre-wrap;">$kp   = sodium_crypto_sign_keypair();
+echo bin2hex( sodium_crypto_sign_secretkey( $kp ) ) . "\n"; // → PRIVATE_KEY (128 hex)
+echo bin2hex( sodium_crypto_sign_publickey( $kp ) ) . "\n"; // → PUBLIC_KEY  ( 64 hex)</pre>
+				<p style="margin:8px 0 0;font-size:12px;color:#646970;">
+					<?php esc_html_e( 'Or use the button below to generate in your browser — private key shown once and never transmitted.', 'archiviomd' ); ?>
+				</p>
+				<p style="margin:10px 0 0;">
+					<button type="button" id="ed25519-keygen-btn" class="button">
+						<?php esc_html_e( 'Generate Keypair in Browser', 'archiviomd' ); ?>
+					</button>
+				</p>
+				<div id="ed25519-keygen-output" style="display:none;margin-top:12px;">
+					<p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#d73a49;">
+						<?php esc_html_e( '⚠ Copy both values now — the private key will not be shown again.', 'archiviomd' ); ?>
+					</p>
+					<table style="border-collapse:collapse;width:100%;">
+						<tr>
+							<td style="padding:4px 8px 4px 0;font-size:12px;white-space:nowrap;font-weight:600;">
+								<?php esc_html_e( 'PRIVATE_KEY', 'archiviomd' ); ?>
+							</td>
+							<td style="width:100%;">
+								<input type="text" id="ed25519-privkey-out" readonly
+								       style="width:100%;font-family:monospace;font-size:11px;"
+								       onclick="this.select();">
+							</td>
+						</tr>
+						<tr>
+							<td style="padding:4px 8px 4px 0;font-size:12px;white-space:nowrap;font-weight:600;">
+								<?php esc_html_e( 'PUBLIC_KEY', 'archiviomd' ); ?>
+							</td>
+							<td>
+								<input type="text" id="ed25519-pubkey-out" readonly
+								       style="width:100%;font-family:monospace;font-size:11px;"
+								       onclick="this.select();">
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<?php endif; ?>
+
+			<!-- Toggle form — identical structure to HMAC form -->
+			<form id="archivio-ed25519-form">
+				<label style="display:flex;align-items:center;gap:10px;cursor:<?php echo ( ! $ed25519_status['private_key_defined'] || ! $ed25519_status['sodium_available'] ) ? 'not-allowed' : 'pointer'; ?>;">
+					<input type="checkbox"
+					       id="ed25519-mode-toggle"
+					       name="ed25519_enabled"
+					       value="1"
+					       <?php checked( $ed25519_status['mode_enabled'], true ); ?>
+					       <?php disabled( ! $ed25519_status['private_key_defined'] || ! $ed25519_status['sodium_available'], true ); ?>>
+					<span>
+						<strong><?php esc_html_e( 'Enable Ed25519 Document Signing', 'archiviomd' ); ?></strong>
+						<span style="font-size:12px;color:#646970;display:block;">
+							<?php esc_html_e( 'Signs posts, pages, and media automatically on save using the private key in wp-config.php.', 'archiviomd' ); ?>
+						</span>
+					</span>
+				</label>
+
+				<div style="margin-top:15px;">
+					<button type="submit" class="button button-primary" id="save-ed25519-btn"
+					        <?php disabled( ! $ed25519_status['private_key_defined'] || ! $ed25519_status['sodium_available'], true ); ?>>
+						<?php esc_html_e( 'Save Ed25519 Setting', 'archiviomd' ); ?>
+					</button>
+					<span class="archivio-ed25519-status" style="margin-left:10px;"></span>
+				</div>
+			</form>
+
+			<div style="margin-top:15px;padding:10px 15px;background:#f0f6ff;border-left:3px solid #2271b1;border-radius:4px;font-size:12px;color:#1d2327;">
+				<strong><?php esc_html_e( 'Public key endpoint:', 'archiviomd' ); ?></strong>
+				<?php
+				printf(
+					/* translators: %s: well-known URL */
+					esc_html__( 'When the public key is defined, it is published at %s so anyone can verify signatures independently.', 'archiviomd' ),
+					'<code>' . esc_html( home_url( '/.well-known/ed25519-pubkey.txt' ) ) . '</code>'
+				);
+				?>
+				<?php if ( $ed25519_status['public_key_defined'] ) : ?>
+				— <a href="<?php echo esc_url( home_url( '/.well-known/ed25519-pubkey.txt' ) ); ?>" target="_blank"><?php esc_html_e( 'View', 'archiviomd' ); ?></a>
+				<?php endif; ?>
+			</div>
+
+			<!-- ── DSSE Envelope Mode ──────────────────────────────── -->
+			<div style="margin-top:20px;padding:15px 20px;background:#f8f9fa;border:1px solid #ddd;border-radius:4px;">
+				<h3 style="margin:0 0 6px;"><?php esc_html_e( 'DSSE Envelope Mode', 'archiviomd' ); ?></h3>
+				<p style="margin:0 0 12px;font-size:13px;color:#1d2327;">
+					<?php esc_html_e( 'When enabled, each signature is wrapped in a Dead Simple Signing Envelope (DSSE) and stored alongside the bare Ed25519 signature. The DSSE envelope includes a Pre-Authentication Encoding (PAE) that binds the payload type to the signature, preventing cross-protocol replay attacks. The bare signature is always kept for backward compatibility.', 'archiviomd' ); ?>
+				</p>
+
+				<?php if ( $ed25519_status['public_key_defined'] ) : ?>
+				<p style="margin:0 0 12px;font-size:12px;color:#646970;">
+					<?php
+					printf(
+						/* translators: %s: fingerprint hex */
+						esc_html__( 'Public key fingerprint (SHA-256): %s', 'archiviomd' ),
+						'<code>' . esc_html( MDSM_Ed25519_Signing::public_key_fingerprint() ) . '</code>'
+					);
+					?>
+				</p>
+				<?php endif; ?>
+
+				<p style="margin:0 0 12px;font-size:12px;color:#646970;">
+					<?php esc_html_e( 'DSSE envelope format:', 'archiviomd' ); ?>
+					<code style="display:block;margin-top:4px;white-space:pre;overflow-x:auto;">{ "payload": base64(canonical_msg), "payloadType": "application/vnd.archiviomd.document", "signatures": [{ "keyid": sha256_hex(pubkey), "sig": base64(sig) }] }</code>
+				</p>
+
+				<form id="archivio-dsse-form">
+					<label style="display:flex;align-items:center;gap:10px;cursor:<?php echo ( ! $ed25519_status['ready'] ) ? 'not-allowed' : 'pointer'; ?>;">
+						<input type="checkbox"
+						       id="dsse-mode-toggle"
+						       name="dsse_enabled"
+						       value="1"
+						       <?php checked( $ed25519_status['dsse_enabled'], true ); ?>
+						       <?php disabled( ! $ed25519_status['ready'], true ); ?>>
+						<span>
+							<strong><?php esc_html_e( 'Enable DSSE Envelope Mode', 'archiviomd' ); ?></strong>
+							<span style="font-size:12px;color:#646970;display:block;">
+								<?php esc_html_e( 'Requires Ed25519 signing to be active. Stores a DSSE envelope in _mdsm_ed25519_dsse post meta on each save.', 'archiviomd' ); ?>
+							</span>
+						</span>
+					</label>
+
+					<div style="margin-top:12px;">
+						<button type="submit" class="button button-secondary" id="save-dsse-btn"
+						        <?php disabled( ! $ed25519_status['ready'], true ); ?>>
+							<?php esc_html_e( 'Save DSSE Setting', 'archiviomd' ); ?>
+						</button>
+						<span class="archivio-dsse-status" style="margin-left:10px;"></span>
+					</div>
+				</form>
+
+				<?php if ( ! $ed25519_status['ready'] ) : ?>
+				<p style="margin:10px 0 0;font-size:12px;color:#646970;">
+					<?php esc_html_e( 'Enable and configure Ed25519 signing above before enabling DSSE mode.', 'archiviomd' ); ?>
+				</p>
+				<?php endif; ?>
+			</div>
+		</div>
+
 		<!-- ── Hash Algorithm ────────────────────────────────────────── -->
 		<h2><?php esc_html_e( 'Hash Algorithm', 'archiviomd' ); ?></h2>
 
@@ -201,11 +420,19 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 						<?php
 						$standard_algos = MDSM_Hash_Helper::standard_algorithms();
 						$algo_meta = array(
-							'sha256'   => array( 'desc' => __( 'Default, universally supported, 64-char hex', 'archiviomd' ) ),
-							'sha512'   => array( 'desc' => __( 'Stronger collision resistance, 128-char hex', 'archiviomd' ) ),
-							'sha3-256' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 64-char hex (PHP 7.1+)', 'archiviomd' ) ),
-							'sha3-512' => array( 'desc' => __( 'SHA-3 / Keccak sponge, 128-char hex (PHP 7.1+)', 'archiviomd' ) ),
-							'blake2b'  => array( 'desc' => __( 'Modern, fast, 128-char hex (PHP 7.2+)', 'archiviomd' ) ),
+							'sha256'     => array( 'desc' => __( 'Default, universally supported, 64-char hex', 'archiviomd' ) ),
+							'sha224'     => array( 'desc' => __( 'SHA-2 truncated, 56-char hex, common in TLS certs', 'archiviomd' ) ),
+							'sha384'     => array( 'desc' => __( 'SHA-2 truncated, 96-char hex, common in TLS certs', 'archiviomd' ) ),
+							'sha512'     => array( 'desc' => __( 'Stronger collision resistance, 128-char hex', 'archiviomd' ) ),
+							'sha512-224' => array( 'desc' => __( 'FIPS-approved SHA-512 truncated to 224-bit, 56-char hex', 'archiviomd' ) ),
+							'sha512-256' => array( 'desc' => __( 'FIPS-approved SHA-512 truncated to 256-bit, 64-char hex', 'archiviomd' ) ),
+							'sha3-256'   => array( 'desc' => __( 'SHA-3 / Keccak sponge, 64-char hex (PHP 7.1+)', 'archiviomd' ) ),
+							'sha3-512'   => array( 'desc' => __( 'SHA-3 / Keccak sponge, 128-char hex (PHP 7.1+)', 'archiviomd' ) ),
+							'blake2b'    => array( 'desc' => __( 'Modern, fast, 128-char hex (PHP 7.2+)', 'archiviomd' ) ),
+							'blake2s'    => array( 'desc' => __( 'BLAKE2s 32-bit optimised, 64-char hex (PHP 7.2+)', 'archiviomd' ) ),
+							'sha256d'    => array( 'desc' => __( 'Double SHA-256, Bitcoin-compatible, 64-char hex', 'archiviomd' ) ),
+							'ripemd160'  => array( 'desc' => __( 'Bitcoin address hashing primitive, 40-char hex', 'archiviomd' ) ),
+							'whirlpool'  => array( 'desc' => __( 'Legacy 512-bit hash, ISO/IEC 10118-3, 128-char hex', 'archiviomd' ) ),
 						);
 						foreach ( $standard_algos as $algo_key => $algo_label ) :
 							$avail       = MDSM_Hash_Helper::get_algorithm_availability( $algo_key );
@@ -272,6 +499,81 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 						</label>
 						<?php endforeach; ?>
 					</div>
+
+					<!-- Regional / Compliance Algorithms -->
+					<div class="algorithm-section" style="margin-bottom:20px;padding:15px;background:#f0f4ff;border:1px solid #6b8ec7;border-radius:4px;">
+						<h3 style="margin-top:0;margin-bottom:8px;font-size:14px;font-weight:600;color:#1d2327;">
+							<?php esc_html_e( 'Regional / Compliance Algorithms', 'archiviomd' ); ?>
+						</h3>
+						<p style="margin:0 0 12px 0;font-size:12px;color:#646970;">
+							<?php esc_html_e( 'Algorithms required by specific national or regulatory standards. Availability depends on your PHP build and OpenSSL configuration.', 'archiviomd' ); ?>
+						</p>
+						<?php
+						$regional_algos = MDSM_Hash_Helper::regional_algorithms();
+						$regional_algo_meta = array(
+							'gost'        => array( 'desc' => __( 'GOST R 34.11-94, Russian federal standard, 64-char hex', 'archiviomd' ) ),
+							'gost-crypto' => array( 'desc' => __( 'GOST R 34.11-94 with CryptoPro S-box, used in Russian PKI/eGov', 'archiviomd' ) ),
+						);
+						foreach ( $regional_algos as $algo_key => $algo_label ) :
+							$avail       = MDSM_Hash_Helper::get_algorithm_availability( $algo_key );
+							$desc        = isset( $regional_algo_meta[ $algo_key ] ) ? $regional_algo_meta[ $algo_key ]['desc'] : '';
+							$unavailable = ! $avail;
+						?>
+						<label style="display:block;margin-bottom:10px;cursor:<?php echo $unavailable ? 'not-allowed' : 'pointer'; ?>;padding-left:22px;position:relative;">
+							<input type="radio"
+							       name="algorithm"
+							       value="<?php echo esc_attr( $algo_key ); ?>"
+							       <?php checked( $active_algorithm, $algo_key ); ?>
+							       <?php disabled( $unavailable, true ); ?>
+							       style="position:absolute;left:0;top:3px;margin:0;">
+							<strong style="font-weight:500;color:#2c4a8c;"><?php echo esc_html( $algo_label ); ?></strong>
+							<br>
+							<span style="color:#646970;font-size:12px;line-height:1.6;">
+								<?php echo esc_html( $desc ); ?>
+								<?php if ( $unavailable ) : ?>
+									<span style="color:#d73a49;">(<?php esc_html_e( 'not available on this PHP build', 'archiviomd' ); ?>)</span>
+								<?php else : ?>
+									<span style="color:#0a7537;">(<?php esc_html_e( 'available', 'archiviomd' ); ?>)</span>
+								<?php endif; ?>
+							</span>
+						</label>
+						<?php endforeach; ?>
+					</div>
+
+					<!-- Legacy / Deprecated Algorithms -->
+					<div class="algorithm-section" style="margin-bottom:20px;padding:15px;background:#fff0f0;border:1px solid #c92b2b;border-radius:4px;">
+						<h3 style="margin-top:0;margin-bottom:8px;font-size:14px;font-weight:600;color:#c92b2b;">
+							<?php esc_html_e( 'Legacy / Deprecated Algorithms', 'archiviomd' ); ?>
+						</h3>
+						<p style="margin:0 0 12px 0;font-size:12px;color:#646970;">
+							<strong style="color:#c92b2b;"><?php esc_html_e( 'Cryptographically broken.', 'archiviomd' ); ?></strong>
+							<?php esc_html_e( 'Only use these to verify hashes from legacy systems or archives. Never use for new integrity-critical hashing.', 'archiviomd' ); ?>
+						</p>
+						<?php
+						$deprecated_algos = MDSM_Hash_Helper::deprecated_algorithms();
+						$dep_algo_meta = array(
+							'md5'  => array( 'desc' => __( 'MD5 – broken, collision attacks known, 32-char hex. Legacy verification only.', 'archiviomd' ) ),
+							'sha1' => array( 'desc' => __( 'SHA-1 – broken, SHAttered collision demonstrated, 40-char hex. Legacy verification only.', 'archiviomd' ) ),
+						);
+						foreach ( $deprecated_algos as $algo_key => $algo_label ) :
+							$desc = isset( $dep_algo_meta[ $algo_key ] ) ? $dep_algo_meta[ $algo_key ]['desc'] : '';
+						?>
+						<label style="display:block;margin-bottom:10px;cursor:pointer;padding-left:22px;position:relative;">
+							<input type="radio"
+							       name="algorithm"
+							       value="<?php echo esc_attr( $algo_key ); ?>"
+							       <?php checked( $active_algorithm, $algo_key ); ?>
+							       style="position:absolute;left:0;top:3px;margin:0;">
+							<strong style="font-weight:500;color:#c92b2b;"><?php echo esc_html( $algo_label ); ?></strong>
+							<br>
+							<span style="color:#646970;font-size:12px;line-height:1.6;">
+								<?php echo esc_html( $desc ); ?>
+								<span style="color:#0a7537;">(<?php esc_html_e( 'available', 'archiviomd' ); ?>)</span>
+							</span>
+						</label>
+						<?php endforeach; ?>
+					</div>
+
 				</fieldset>
 
 				<div style="margin-top:15px;">
@@ -412,9 +714,9 @@ $active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'set
 			<h3><?php esc_html_e( 'Enable All Settings', 'archiviomd' ); ?></h3>
 			<p><?php esc_html_e( 'Click this button to enable Auto-Generate and all badge display options.', 'archiviomd' ); ?></p>
 			<p style="font-size:12px;color:#666;">
-				<?php 
-				$current_value = get_option('archivio_post_auto_generate');
-				printf( '<code>%s</code>', esc_html( var_export( $current_value, true ) ) );
+				<?php
+				$current_value = get_option( 'archivio_post_auto_generate' );
+				printf( '<code>%s</code>', esc_html( $current_value ? 'enabled' : 'disabled' ) );
 				?>
 			</p>
 			<button type="button" id="fix-settings-btn" class="button button-secondary">
@@ -641,6 +943,138 @@ jQuery(document).ready(function($) {
 					var msg = '<span style="color:#0a7537;">✓ ' + response.data.message + '</span>';
 					if (response.data.notice_level === 'warning') {
 						msg += '<br><span style="color:#dba617;">⚠ ' + response.data.notice_message + '</span>';
+					}
+					$status.html(msg);
+				} else {
+					$status.html('<span style="color:#d73a49;">✗ ' + (response.data.message || archivioPostData.strings.error) + '</span>');
+				}
+			},
+			error: function() {
+				$status.html('<span style="color:#d73a49;">✗ ' + archivioPostData.strings.error + '</span>');
+			},
+			complete: function() {
+				$btn.prop('disabled', false);
+				setTimeout(function() {
+					$status.fadeOut(function() { $(this).html('').show(); });
+				}, 5000);
+			}
+		});
+	});
+
+	// ── Ed25519 form ─────────────────────────────────────────────────
+	$('#archivio-ed25519-form').on('submit', function(e) {
+		e.preventDefault();
+
+		var $btn    = $('#save-ed25519-btn');
+		var $status = $('.archivio-ed25519-status');
+		var enabled = $('#ed25519-mode-toggle').is(':checked');
+
+		$btn.prop('disabled', true);
+		$status.html('<span class="spinner is-active" style="float:none;"></span>');
+
+		$.ajax({
+			url:  archivioPostData.ajaxUrl,
+			type: 'POST',
+			data: {
+				action:          'archivio_post_save_ed25519_settings',
+				nonce:           archivioPostData.nonce,
+				ed25519_enabled: enabled ? 'true' : 'false'
+			},
+			success: function(response) {
+				if (response.success) {
+					var msg = '<span style="color:#0a7537;">✓ ' + response.data.message + '</span>';
+					if (response.data.notice_level === 'warning') {
+						msg += '<br><span style="color:#dba617;">⚠ ' + response.data.notice_message + '</span>';
+					}
+					$status.html(msg);
+				} else {
+					$status.html('<span style="color:#d73a49;">✗ ' + (response.data.message || archivioPostData.strings.error) + '</span>');
+				}
+			},
+			error: function() {
+				$status.html('<span style="color:#d73a49;">✗ ' + archivioPostData.strings.error + '</span>');
+			},
+			complete: function() {
+				$btn.prop('disabled', false);
+				setTimeout(function() {
+					$status.fadeOut(function() { $(this).html('').show(); });
+				}, 5000);
+			}
+		});
+	});
+
+	// ── Ed25519 in-browser keypair generator ─────────────────────────
+	$('#ed25519-keygen-btn').on('click', function() {
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Generating\u2026');
+
+		function bytesToHex(bytes) {
+			return Array.from(new Uint8Array(bytes))
+				.map(function(b) { return b.toString(16).padStart(2, '0'); })
+				.join('');
+		}
+
+		if (!window.crypto || !window.crypto.subtle) {
+			alert('window.crypto.subtle is not available. Use the PHP CLI method shown above.');
+			$btn.prop('disabled', false).text('Generate Keypair in Browser');
+			return;
+		}
+
+		window.crypto.subtle.generateKey(
+			{ name: 'Ed25519' },
+			true,
+			['sign', 'verify']
+		).then(function(kp) {
+			return Promise.all([
+				window.crypto.subtle.exportKey('raw',   kp.publicKey),
+				window.crypto.subtle.exportKey('pkcs8', kp.privateKey)
+			]);
+		}).then(function(results) {
+			var pubHex  = bytesToHex(results[0]);
+			var pkcs8   = new Uint8Array(results[1]);
+			var seed    = pkcs8.slice(pkcs8.length - 32);
+			var privHex = bytesToHex(seed) + pubHex;
+
+			$('#ed25519-privkey-out').val(privHex);
+			$('#ed25519-pubkey-out').val(pubHex);
+			$('#ed25519-keygen-output').show();
+			$btn.prop('disabled', false).text('Regenerate Keypair');
+		}).catch(function(err) {
+			alert('Browser Ed25519 generation failed (' + err.message + '). Use the PHP CLI method shown above.');
+			$btn.prop('disabled', false).text('Generate Keypair in Browser');
+		});
+	});
+
+	// ── DSSE form ────────────────────────────────────────────────────
+	$('#archivio-dsse-form').on('submit', function(e) {
+		e.preventDefault();
+
+		var $btn     = $('#save-dsse-btn');
+		var $status  = $('.archivio-dsse-status');
+		var dsseon   = $('#dsse-mode-toggle').is(':checked');
+		// Ed25519 master toggle must be on for DSSE to be meaningful.
+		var ed25519on = $('#ed25519-mode-toggle').is(':checked');
+
+		$btn.prop('disabled', true);
+		$status.html('<span class="spinner is-active" style="float:none;"></span>');
+
+		$.ajax({
+			url:  archivioPostData.ajaxUrl,
+			type: 'POST',
+			data: {
+				action:          'archivio_post_save_ed25519_settings',
+				nonce:           archivioPostData.nonce,
+				ed25519_enabled: ed25519on ? 'true' : 'false',
+				dsse_enabled:    dsseon    ? 'true' : 'false'
+			},
+			success: function(response) {
+				if (response.success) {
+					var saved = response.data.dsse_enabled;
+					var msg   = saved
+						? '<span style="color:#0a7537;">✓ DSSE Envelope Mode enabled. New signatures will include a DSSE envelope.</span>'
+						: '<span style="color:#646970;">✓ DSSE Envelope Mode disabled.</span>';
+					if (response.data.notice_level === 'error') {
+						msg = '<span style="color:#d73a49;">✗ ' + response.data.notice_message + '</span>';
 					}
 					$status.html(msg);
 				} else {

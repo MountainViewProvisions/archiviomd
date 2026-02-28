@@ -73,8 +73,12 @@ function mdsm_get_meta_files() {
  */
 function mdsm_get_seo_files() {
     return array(
-        'robots.txt' => 'Controls what parts of the site search engines may crawl',
-        'llms.txt' => 'Optional file for LLM or AI-related site instructions',
+        'robots.txt'  => 'Controls what parts of the site search engines may crawl',
+        'llms.txt'    => 'Optional file for LLM or AI-related site instructions',
+        'ai.txt'      => 'Granular permissions and instructions for AI crawlers and agents',
+        'ads.txt'     => 'Authorized Digital Sellers — declares who is permitted to sell your ad inventory',
+        'app-ads.txt' => 'Mobile app equivalent of ads.txt for in-app advertising inventory',
+        'sellers.json' => 'Identifies the entities authorized to sell or resell your ad inventory',
     );
 }
 

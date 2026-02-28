@@ -15,43 +15,55 @@ class MDSM_File_Manager {
      * Get file path based on type and name
      */
     public function get_file_path($file_type, $file_name) {
-        $root_path = ABSPATH . $file_name;
-        
-        // For meta files, try .well-known/meta-docs/ first, then root, then fallback
+        $root_path   = ABSPATH . $file_name;
+        $upload_dir  = wp_upload_dir();
+        $upload_path = $upload_dir['basedir'] . '/meta-docs/' . $file_name;
+
+        // For meta files: check each candidate location for an existing file first,
+        // then fall back to writability order for new files.
         if ($file_type === 'meta') {
             $well_known_path = ABSPATH . '.well-known/meta-docs/' . $file_name;
-            
-            // Check if .well-known directory exists and is writable
+
+            // 1. Return wherever the file already exists (read path).
+            if (file_exists($well_known_path)) {
+                return $well_known_path;
+            }
+            if (file_exists($root_path)) {
+                return $root_path;
+            }
+            if (file_exists($upload_path)) {
+                return $upload_path;
+            }
+
+            // 2. File does not exist yet — determine best writable location (write path).
             if ($this->ensure_directory(ABSPATH . '.well-known/meta-docs/')) {
                 return $well_known_path;
             }
-            
-            // Check if root is writable
             if (is_writable(ABSPATH)) {
                 return $root_path;
             }
-            
-            // Fallback to plugin directory
-            $upload_dir = wp_upload_dir();
-            $fallback_path = $upload_dir['basedir'] . '/meta-docs/' . $file_name;
             $this->ensure_directory($upload_dir['basedir'] . '/meta-docs/');
-            return $fallback_path;
+            return $upload_path;
         }
-        
-        // For SEO files (robots.txt, llms.txt), try root first
+
+        // For SEO files (robots.txt, llms.txt, etc.): root first, uploads fallback.
         if ($file_type === 'seo') {
-            // Check if root is writable
+            // 1. Return wherever the file already exists (read path).
+            if (file_exists($root_path)) {
+                return $root_path;
+            }
+            if (file_exists($upload_path)) {
+                return $upload_path;
+            }
+
+            // 2. File does not exist yet — determine best writable location (write path).
             if (is_writable(ABSPATH)) {
                 return $root_path;
             }
-            
-            // Fallback to plugin directory
-            $upload_dir = wp_upload_dir();
-            $fallback_path = $upload_dir['basedir'] . '/meta-docs/' . $file_name;
             $this->ensure_directory($upload_dir['basedir'] . '/meta-docs/');
-            return $fallback_path;
+            return $upload_path;
         }
-        
+
         return false;
     }
     
@@ -83,13 +95,13 @@ class MDSM_File_Manager {
             return '/.well-known/meta-docs/';
         }
         
-        if (strpos($file_path, ABSPATH) === 0 && strpos($file_path, '/wp-content/') === false) {
+        $upload_dir = wp_upload_dir();
+        if (strpos($file_path, ABSPATH) === 0 && strpos($file_path, $upload_dir['basedir']) === false) {
             return '/site-root/';
         }
         
-        $upload_dir = wp_upload_dir();
         if (strpos($file_path, $upload_dir['basedir']) === 0) {
-            return '/wp-content/uploads/meta-docs/';
+            return trailingslashit( $upload_dir['baseurl'] ) . 'meta-docs/';
         }
         
         return 'Unknown';
