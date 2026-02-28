@@ -3,7 +3,7 @@
  * Plugin Name: ArchivioMD
  * Plugin URI: https://mountainviewprovisions.com/ArchivioMD
  * Description: Manage meta-docs, SEO files, and sitemaps with audit tools and HTML-rendered Markdown support.
- * Version: 1.5.9
+ * Version: 1.7.0
  * Author: Mountain View Provisions LLC
  * Author URI: https://mountainviewprovisions.com/
  * Requires at least: 5.0
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MDSM_VERSION', '1.5.9');
+define('MDSM_VERSION', '1.7.0');
 define('MDSM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MDSM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MDSM_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -69,6 +69,9 @@ class Meta_Documentation_SEO_Manager {
         
         // Initialize External Anchoring (singleton)
         MDSM_External_Anchoring::get_instance();
+
+        // Initialize Ed25519 Document Signing (singleton)
+        MDSM_Ed25519_Signing::get_instance();
         
         // Initialize admin
         if (is_admin()) {
@@ -122,6 +125,12 @@ class Meta_Documentation_SEO_Manager {
         require_once MDSM_PLUGIN_DIR . 'includes/class-compliance-tools.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-archivio-post.php';
         require_once MDSM_PLUGIN_DIR . 'includes/class-external-anchoring.php';
+        require_once MDSM_PLUGIN_DIR . 'includes/class-ed25519-signing.php';
+
+        // WP-CLI commands — loaded only when CLI is active, invisible at runtime.
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            require_once MDSM_PLUGIN_DIR . 'includes/class-cli.php';
+        }
     }
     
     /**
@@ -250,8 +259,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field( $_POST['file_type'] );
-        $file_name = sanitize_text_field( $_POST['file_name'] );
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         
         // Validate file_type against known-good values before any file operation
         $allowed_file_types = array( 'meta', 'seo' );
@@ -268,16 +277,15 @@ class Meta_Documentation_SEO_Manager {
         $result = $file_manager->save_file( $file_type, $file_name, $content );
         
         // Queue external anchor for native Markdown documents after successful save.
+        // Queued in both HMAC and Basic modes — compute_packed() always returns a valid hash result.
         if ($result['success'] && $file_type === 'meta' && !empty($result['metadata']) && !empty(trim($content))) {
             $metadata    = $result['metadata'];
             $hash_result = MDSM_Hash_Helper::compute_packed($content);
-            if (!$hash_result['hmac_unavailable']) {
-                MDSM_External_Anchoring::get_instance()->queue_document_anchor(
-                    $file_name,
-                    $metadata,
-                    $hash_result
-                );
-            }
+            MDSM_External_Anchoring::get_instance()->queue_document_anchor(
+                $file_name,
+                $metadata,
+                $hash_result
+            );
         }
         
         // Auto-generate HTML for meta files if content is not empty
@@ -320,8 +328,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         $delete_html = isset( $_POST['delete_html'] ) ? (bool) sanitize_text_field( wp_unslash( $_POST['delete_html'] ) ) : false;
         
         $file_manager = new MDSM_File_Manager();
@@ -360,8 +368,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         
         $file_manager = new MDSM_File_Manager();
         $file_info = $file_manager->get_file_info($file_type, $file_name);
@@ -408,7 +416,7 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $sitemap_type = sanitize_text_field($_POST['sitemap_type']);
+        $sitemap_type = sanitize_text_field( wp_unslash( $_POST['sitemap_type'] ) );
         $auto_update = isset( $_POST['auto_update'] ) ? (bool) sanitize_text_field( wp_unslash( $_POST['auto_update'] ) ) : false;
         
         // Save auto-update preference
@@ -446,8 +454,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         
         $html_renderer = new MDSM_HTML_Renderer();
         $result = $html_renderer->generate_html_file($file_type, $file_name);
@@ -483,8 +491,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         
         $html_renderer = new MDSM_HTML_Renderer();
         $result = $html_renderer->delete_html_file($file_type, $file_name);
@@ -506,8 +514,8 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_type = sanitize_text_field($_POST['file_type']);
-        $file_name = sanitize_text_field($_POST['file_name']);
+        $file_type = sanitize_text_field( wp_unslash( $_POST['file_type'] ) );
+        $file_name = sanitize_text_field( wp_unslash( $_POST['file_name'] ) );
         
         $html_renderer = new MDSM_HTML_Renderer();
         $exists = $html_renderer->html_file_exists($file_type, $file_name);
@@ -530,7 +538,7 @@ class Meta_Documentation_SEO_Manager {
         }
         
         $enabled = isset( $_POST['enabled'] ) && sanitize_text_field( wp_unslash( $_POST['enabled'] ) ) === '1';
-        $page_id = isset($_POST['page_id']) ? intval($_POST['page_id']) : 0;
+        $page_id = isset( $_POST['page_id'] ) ? absint( $_POST['page_id'] ) : 0;
         $public_docs = isset( $_POST['public_docs'] ) ? wp_unslash( $_POST['public_docs'] ) : array();
         $descriptions = isset( $_POST['descriptions'] ) ? wp_unslash( $_POST['descriptions'] ) : array();
         
@@ -584,8 +592,8 @@ class Meta_Documentation_SEO_Manager {
             exit;
         }
         
-        $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
-        $description = isset($_POST['description']) ? sanitize_text_field($_POST['description']) : '';
+        $filename = isset($_POST['filename']) ? sanitize_text_field( wp_unslash( $_POST['filename'] ) ) : '';
+        $description = isset($_POST['description']) ? sanitize_text_field( wp_unslash( $_POST['description'] ) ) : '';
         
         if (empty($filename)) {
             wp_send_json_error(array('message' => 'Filename is required'));
@@ -642,7 +650,7 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $filename = isset($_POST['filename']) ? sanitize_text_field($_POST['filename']) : '';
+        $filename = isset($_POST['filename']) ? sanitize_text_field( wp_unslash( $_POST['filename'] ) ) : '';
         
         if (empty($filename)) {
             wp_send_json_error(array('message' => 'Filename is required'));
@@ -668,7 +676,7 @@ class Meta_Documentation_SEO_Manager {
             wp_send_json_error(array('message' => 'Insufficient permissions'));
         }
         
-        $file_name = isset($_POST['file_name']) ? sanitize_text_field($_POST['file_name']) : '';
+        $file_name = isset($_POST['file_name']) ? sanitize_text_field( wp_unslash( $_POST['file_name'] ) ) : '';
         
         if (empty($file_name)) {
             wp_send_json_error(array('message' => 'File name is required'));
@@ -752,6 +760,13 @@ class Meta_Documentation_SEO_Manager {
             'index.php?mdsm_file=sitemap-$matches[1].xml',
             'top'
         );
+
+        // Well-known endpoint for Ed25519 public key.
+        add_rewrite_rule(
+            '^\.well-known/ed25519-pubkey\.txt$',
+            'index.php?mdsm_file=ed25519-pubkey.txt',
+            'top'
+        );
     }
     
     /**
@@ -771,12 +786,10 @@ class Meta_Documentation_SEO_Manager {
         if (empty($file)) {
             return; // Not a request for our files
         }
-        
-        // Check if file exists in root first (physical file takes precedence)
-        $root_file = ABSPATH . $file;
-        if (file_exists($root_file) && is_readable($root_file)) {
-            // Let the physical file be served
-            return;
+
+        // ── Ed25519 public key well-known endpoint ──────────────────────
+        if ( $file === 'ed25519-pubkey.txt' ) {
+            MDSM_Ed25519_Signing::serve_public_key(); // exits
         }
         
         // Determine file type
@@ -798,7 +811,9 @@ class Meta_Documentation_SEO_Manager {
         // Get file path
         if ($file_type === 'sitemap') {
             $upload_dir = wp_upload_dir();
-            $file_path = $upload_dir['basedir'] . '/meta-docs/' . $file;
+            $root_sitemap = ABSPATH . $file;
+            $upload_sitemap = $upload_dir['basedir'] . '/meta-docs/' . $file;
+            $file_path = file_exists($root_sitemap) ? $root_sitemap : $upload_sitemap;
         } elseif ($file_type === 'html') {
             // Handle HTML files
             $html_renderer = new MDSM_HTML_Renderer();
