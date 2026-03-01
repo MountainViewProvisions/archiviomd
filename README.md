@@ -2,9 +2,9 @@
 
 **ArchivioMD** is a document integrity and compliance plugin for WordPress  built for teams and developers who need more than file storage.
 
-At its core, ArchivioMD gives you a clean, centralized admin interface for managing site documentation, SEO files, and sitemaps. But underneath that clean surface sits a serious cryptographic engine: every document and post can be fingerprinted with SHA-256, SHA-512, BLAKE2b, or HMAC-backed hashes,Ed25519 Document Signing then anchored to external trust registries — including RFC 3161 timestamping authorities, the Sigstore/Rekor transparency log, and GitHub or GitLab repositories creating a tamper-evident, verifiable paper trail for your content.
+At its core, ArchivioMD gives you a clean, centralized admin interface for managing site documentation, SEO files, and sitemaps. But underneath that clean surface sits a serious cryptographic engine: every document and post can be fingerprinted with SHA-256, SHA-512, BLAKE2b, or HMAC-backed hashes,Ed25519 Document Signing then anchored to external trust register including RFC 3161 timestamping authorities, the Sigstore/Rekor transparency log, and GitHub or GitLab repositories creating a tamper-evident, verifiable paper trail for your content.
 
-Whether you're meeting compliance requirements, protecting against unauthorized edits, or simply building a site where document integrity actually matters, ArchivioMD gives you audit logs, checksum verification, backup and restore with dry-run previews, signed compliance exports, and an asynchronous anchoring queue with exponential backoff 
+Whether you're meeting compliance requirements, protecting against unauthorized edits, or simply building a site where document integrity actually matters, ArchivioMD gives you audit logs, checksum verification, backup and restore with dry-run previews, signed compliance exports, and an asynchronous anchoring queue with exponential backoff.
 
 [![Version](https://img.shields.io/badge/version-1.7.0-667eea)](https://github.com/MountainViewProvisions/archiviomd/releases)
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
