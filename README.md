@@ -6,6 +6,8 @@ At its core, ArchivioMD gives you a clean, centralized admin interface for manag
 
 Whether you're meeting compliance requirements, protecting against unauthorized edits, or simply building a site where document integrity actually matters, ArchivioMD gives you audit logs, checksum verification, backup and restore with dry-run previews, signed compliance exports, steganographic content fingerprinting, and an asynchronous anchoring queue with exponential backoff.
 
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_shield&issueType=license)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_shield&issueType=security)
 [![Version](https://img.shields.io/badge/version-1.17.4-667eea)](https://github.com/MountainViewProvisions/archiviomd/releases)
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)](https://php.net)
