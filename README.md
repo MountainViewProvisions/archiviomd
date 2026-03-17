@@ -19,6 +19,8 @@ Whether you're meeting compliance requirements, protecting against unauthorized 
 [![Anchoring](https://img.shields.io/badge/anchoring-GitHub%20%7C%20GitLab%20%7C%20RFC3161%20%7C%20Rekor%20%7C%20DANE-1f2937)](https://github.com/MountainViewProvisions/archiviomd)
 [![Fingerprinting](https://img.shields.io/badge/fingerprinting-Canary%20Tokens-f59e0b)](https://github.com/MountainViewProvisions/archiviomd)
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/12199/baseline)](https://www.bestpractices.dev/projects/12199)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12199/badge)](https://www.bestpractices.dev/projects/12199) 
+
 ---
 
 ## Table of Contents
