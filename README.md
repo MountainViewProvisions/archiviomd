@@ -18,7 +18,7 @@ Whether you're meeting compliance requirements, protecting against unauthorized 
 [![Post-Quantum](https://img.shields.io/badge/post--quantum-SLH--DSA%20FIPS%20205-10b981)](https://github.com/MountainViewProvisions/archiviomd)
 [![Anchoring](https://img.shields.io/badge/anchoring-GitHub%20%7C%20GitLab%20%7C%20RFC3161%20%7C%20Rekor%20%7C%20DANE-1f2937)](https://github.com/MountainViewProvisions/archiviomd)
 [![Fingerprinting](https://img.shields.io/badge/fingerprinting-Canary%20Tokens-f59e0b)](https://github.com/MountainViewProvisions/archiviomd)
-
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/12199/baseline)](https://www.bestpractices.dev/projects/12199)
 ---
 
 ## Table of Contents
