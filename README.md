@@ -16,6 +16,7 @@ Whether you're meeting compliance requirements, protecting against unauthorized 
 [![Post-Quantum](https://img.shields.io/badge/post--quantum-SLH--DSA%20FIPS%20205-10b981)](https://github.com/MountainViewProvisions/archiviomd)
 [![Anchoring](https://img.shields.io/badge/anchoring-GitHub%20%7C%20GitLab%20%7C%20RFC3161%20%7C%20Rekor%20%7C%20DANE-1f2937)](https://github.com/MountainViewProvisions/archiviomd)
 [![Fingerprinting](https://img.shields.io/badge/fingerprinting-Canary%20Tokens-f59e0b)](https://github.com/MountainViewProvisions/archiviomd)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_shield)
 
 ---
 
@@ -899,6 +900,9 @@ Licensed under the **GNU General Public License v2.0 (GPL-2.0)** — the same li
 See [`LICENSE`](LICENSE) for full license text.
 
 ---
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_large)
 
 ## Author
 
