@@ -1,10 +1,9 @@
 # ArchivioMD
 
-**ArchivioMD** is a document integrity and compliance plugin for WordPress built for teams and developers who need more than file storage.
+**ArchivioMD** gives WordPress sites a cryptographic proof layer. Every post, page, and document gets a tamper-evident integrity record independently verifiable without trusting the platform, the host, or the database. Built for journalists, compliance teams, and at-risk publishers for whom the question "was this changed after it was published?" has a real answer.
 
-At its core, ArchivioMD gives you a clean, centralized admin interface for managing site documentation, SEO files, and sitemaps. But underneath that clean surface sits a serious cryptographic engine: every document and post can be fingerprinted with SHA-256, SHA-512, BLAKE2b, or HMAC-backed hashes, signed with Ed25519, SLH-DSA (post-quantum), ECDSA P-256, or RSA, then anchored to external trust registers including RFC 3161 timestamping authorities, the Sigstore/Rekor transparency log, GitHub or GitLab repositories, and DNSSEC-protected DNS records — creating a tamper-evident, verifiable paper trail for your content.
-
-Whether you're meeting compliance requirements, protecting against unauthorized edits, or simply building a site where document integrity actually matters, ArchivioMD gives you audit logs, checksum verification, backup and restore with dry-run previews, signed compliance exports, steganographic content fingerprinting, and an asynchronous anchoring queue with exponential backoff.
+The verification stack: Ed25519 DSSE signing · SLH-DSA/SPHINCS+ post-quantum (NIST FIPS 205, pure PHP, no extensions) · Sigstore/Rekor transparency log anchoring · RFC 3161 trusted timestamps · DANE/DNSSEC key corroboration · W3C DID documents · JSON-LD Data Integrity proofs · 14-channel steganographic canary tokens with semantic encoding that survives OCR.
+It also provides a clean admin interface for managing site documentation, SEO files, and sitemaps — but that's the surface. The cryptographic engine is the point.
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_shield&issueType=license)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd.svg?type=shield&issueType=security)](https://app.fossa.com/projects/git%2Bgithub.com%2FMountainViewProvisions%2Farchiviomd?ref=badge_shield&issueType=security)
