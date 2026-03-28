@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+title: ArchivioMD
+message: "If you use this software, please cite it using the metadata below."
+type: software
+version: 1.19.2
+date-released: 2026-03-28
+license: GPL-2.0-or-later
+
+authors:
+  - name: "Mountain View Provisions LLC"
+    alias: mtnviewpro
+    contact: Sean Bailey
+
+repository-code: https://github.com/MountainViewProvisions/archiviomd
+url: https://wordpress.org/plugins/archiviomd
+
+abstract: >
+  ArchivioMD adds a cryptographic proof layer to WordPress. Every post,
+  page, and document receives a verifiable integrity record independently
+  checkable without trusting the platform, host, or database. Features
+  include content hashing with 20+ algorithms, HMAC integrity mode,
+  document signing (Ed25519, SLH-DSA/SPHINCS+, ECDSA P-256, RSA,
+  CMS/PKCS#7, JSON-LD/W3C Data Integrity), DANE/DNS key corroboration,
+  external anchoring via RFC 3161, Sigstore/Rekor, and Git repositories,
+  steganographic canary token fingerprinting across 14 channels, and
+  compliance export tools suitable for legal evidence packages and SIEM
+  ingestion.
+
+keywords:
+  - WordPress
+  - cryptography
+  - content-integrity
+  - digital-signature
+  - post-quantum
+  - DANE
+  - RFC-3161
+  - Sigstore
+  - steganography
+  - compliance
+
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.19272395
+    description: Zenodo
+  - type: doi
+    value: 10.6084/m9.figshare.31879087
+    description: figshare
+  - type: swh
+    value: "swh:1:dir:55039b1721ab342da1339b7d1a2349f1c520375c;origin=https://github.com/MountainViewProvisions/archiviomd;visit=swh:1:snp:4800a21cfb9b80d6d6bb0746e49e5d984efb97d0;anchor=swh:1:rev:683d0336bd23130b0d1a373e0a4aeb52902e2411"
+    description: Software Heritage
+
