@@ -884,14 +884,31 @@ wp archiviomd dane-check --finish-rotation  # end key rotation mode
 
 ---
 
-## Roadmap
+## Archival & Citation
 
-- Additional document types and templates
-- Enhanced sitemap controls (priority, change frequency)
-- UI refinements and accessibility improvements
-- Bulk import for migrating existing documentation
-- Version history UI for documentation changes
-- Collaborative editing features for team workflows
+### DOIs
+[
+
+![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19272395.svg)
+
+](https://doi.org/10.5281/zenodo.19272395)
+[
+
+![DOI](https://img.shields.io/badge/DOI-10.6084%2Fm9.figshare.31879087-blue)
+
+](https://doi.org/10.6084/m9.figshare.31879087)
+
+### Software Heritage
+[
+
+![SWH](https://archive.softwareheritage.org/badge/swh:1:dir:55039b1721ab342da1339b7d1a2349f1c520375c/)
+
+](https://archive.softwareheritage.org/swh:1:dir:55039b1721ab342da1339b7d1a2349f1c520375c;origin=https://github.com/MountainViewProvisions/archiviomd;visit=swh:1:snp:4800a21cfb9b80d6d6bb0746e49e5d984efb97d0;anchor=swh:1:rev:683d0336bd23130b0d1a373e0a4aeb52902e2411)
+
+### Cite this software
+If you use ArchivioMD in your research or work, please cite:
+
+> Mountain View Provisions LLC. (2026). ArchivioMD (1.19.2). Zenodo. https://doi.org/10.5281/zenodo.19272395
 
 ---
 
